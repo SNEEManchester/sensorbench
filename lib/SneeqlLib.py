@@ -1,5 +1,13 @@
+import os
 
 sneeRoot = os.getenv('SNEEROOT')
+
+tasks2queries = {"raw" : "RSTREAM SELECT * FROM seaDefence[NOW];", \
+		 "aggr" : "RSTREAM SELECT AVG(seaLevel) FROM seaDefence[NOW];", \
+		 "corr1" : "RSTREAM SELECT e.seaLevel, w.seaLevel FROM seaDefenceEast[NOW] e, seaDefenceWest[NOW] w WHERE e.seaLevel > w.seaLevel;", \
+		 "corr2" : "RSTREAM SELECT e.seaLevel, w.seaLevel FROM seaDefenceEast[NOW] e, seaDefenceWest[FROM NOW TO NOW-1 SECOND] w WHERE e.seaLevel > w.seaLevel;", \
+		 "LR" : "RSTREAM SELECT * FROM seaDefence[NOW];", #TODO: provide correct query
+		 "OD" : "RSTREAM SELECT * FROM seaDefence[NOW];"} #TODO: provide correct query 
 
 def createSNEEPropertiesFile(runAttr):
 	global sneeRoot
@@ -247,6 +255,11 @@ def getElfString(numNodes):
 			
 	return (string.join(elfs,' '),string.join(ones,","))
 
+def getSensorDataString(numNodes):
+	sensorData = []
+	for i in range(numNodes):
+		sensorData += ["light:"+str(i)+":."]
+	return string.join(sensorData,',')
 
 #Tests a candidate plan using Avrora
 #MAYBE SHOULDN'T BE HERE - PUT HERE FOR NOW

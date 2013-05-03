@@ -1,10 +1,13 @@
 #!/usr/bin/python
 
 import re, getopt, logging, sys, os, string, UtilLib, CSVLib, AvroraLib, networkLib, shutil
-import parseAcquireDeliverTimes, equivRuns
+import SneeqlLib
+import parseAcquireDeliverTimes, equivRuns #TODO: Move these to where they are needed
 
 optLabel = ""
-optOutputDir = os.getenv('HOME')+os.sep+"tmp"+os.sep+"results"+os.sep
+optOutputDir = os.getenv('HOME')+os.sep+"tmp"+os.sep+"sensebench"+os.sep
+tempSneeFilesDir = optOutputDir + "tempSNEEFiles" #Move to SNEElib
+avroraJobDir = optOutputDir + "avroraJobs" #Move to SNEELib
 
 #Default list of platforms to run experiments over
 #optPlatList = ["MHOSC", "INSNEE"]
@@ -13,15 +16,19 @@ optPlatList = ["INSNEE"]
 #Default list of experiments to be run
 #optExprList = ['0a', '0b', '0c', '0d', '0e']
 #optExprList = ['alphaCalib2']
-optExprList = ["1a", "1b", "2a", "2b", "3a", "3b", "4a", "4b", "5a", "5b", "6a", "6b", "7"]
+#optExprList = ["1a", "1b", "2a", "2b", "3a", "3b", "4a", "4b", "5a", "5b", "6a", "6b", "7"]
+optExprList = ["1a"]
+
+#optNumInstances = 10
+optNumInstances = 2
 
 #Flag to determine whether Avrora jobs will be executed via Condor parallel execution system
 optUseCondor = True
 
 def parseArgs(args):	
-	global optOutputDir, optPlatList, optExprList, optUseCondor
+	global optOutputDir, optPlatList, optExprList, optNumInstances, optUseCondor
 	try:
-		optNames = ["outputdir=", "plat=", "exp=", "use-condor="]
+		optNames = ["outputdir=", "plat=", "exp=", "num-instances=", "use-condor="]
 	
 		#append the result of getOpNames to all the libraries 
 		optNames = UtilLib.removeDuplicates(optNames)
@@ -37,6 +44,8 @@ def parseArgs(args):
 			optPlatList = a.split(',')
 		if (o == "--exp"):
 			optExprList = a.split(',')
+		if (o == "--num-instances"):
+			optNumInstances = int(a)	
 		if (o == "--use-condor"):
 			optExprList = bool(a)
 		else:
@@ -100,8 +109,8 @@ def logResultsToFiles(runAttr, runAttrCols, outputDir):
 	resultsFileName = outputDir+os.sep+"all-results.csv"
 	logResultsToFile(runAttr, runAttrCols, resultsFileName)
 
-def getRunOutputDir(runAttr, rootOutputDir, task):
-	return rootOutputDir+os.sep+"exp"+runAttr["Experiment"]+"-"+runAttr["Platform"]+"-x"+runAttr["xvalLabel"]+"-"+task+"-i"+runAttr["Instance"]
+def getRunDir(runAttr, task):
+	return "exp"+runAttr["Experiment"]+"-"+runAttr["Platform"]+"-x"+runAttr["xvalLabel"]+"-"+task+"-i"+runAttr["Instance"]
 
 def obtainNetworkTopologyAttributes(runAttr):
 	physicalSchemaName = runAttr['PhysicalSchema']
@@ -113,22 +122,33 @@ def obtainNetworkTopologyAttributes(runAttr):
 		runAttr['Layout'] = m.group(2)
 		runAttr['NetworkDensity'] = int(m.group(3))
 		runAttr['NetworkPercentSources'] = int(m.group(4))
-		runAttr['PhysicalSchemaFilename'] = networkLib.getPhysicalSchemaFilename(runAttr['NetworkSize'],runAttr['Layout'],runAttr['NetworkDensity'],runAttr['NetworkPercentSources'])
-		(runAttr['SNEETopologyFilename'],runAttr['AvroraTopologyFilename']) = networkLib.getTopologyFilenames(runAttr['NetworkSize'],runAttr['Layout'],runAttr['NetworkDensity'])
+		runAttr['PhysicalSchemaFilename'] = networkLib.getPhysicalSchemaFilename("",runAttr['NetworkSize'],runAttr['Layout'],runAttr['NetworkDensity'],runAttr['NetworkPercentSources'],runAttr['Instance'])
+		(runAttr['SNEETopologyFilename'],runAttr['AvroraTopologyFilename']) = networkLib.getTopologyFilenames("", runAttr['NetworkSize'],runAttr['Layout'],runAttr['NetworkDensity'],runAttr['Instance'])
 	else:
-		print "ERROR: physical schema filename does not conform to standard format"
+		print "ERROR: physical schema filename %s does not conform to standard format" % (physicalSchemaName)
 		sys.exit(2)
 
 
-def getSensorDataString(numNodes):
-	sensorData = []
-	for i in range(numNodes):
-		sensorData += ["light:"+str(i)+":."]
-	return string.join(sensorData,',')
+def initRunAttr(exprAttr, x, xValLabel, xValAttr, instance, plat, task):
+	runAttr = exprAttr.copy()
+	runAttr["Platform"] = plat
+	#set fixed parameters for the experiments
+	runAttr["PhysicalSchema"] = runAttr["PhysicalSchemas"] 
+	runAttr["RadioLossRate"] = runAttr["RadioLossRates"]
+	runAttr["AcquisitionRate"] = runAttr["AcquisitionRates"]
+	#overwrite variable param
+	runAttr[xValAttr] = x
+	runAttr["xvalLabel"] = xValLabel
+	runAttr["Instance"] = instance
+	obtainNetworkTopologyAttributes(runAttr)
+	runAttr["Task"] = task
+	return runAttr
+
 
 def generateAvroraLogfileName(runAttr):
-	 return "%s-exp%s-x%s-avrora-log.txt" % (runAttr["Platform"], runAttr["Experiment"], runAttr["xvalLabel"])
+	 return "%s-exp%s-x%s-i%s-avrora-log.txt" % (runAttr["Platform"], runAttr["Experiment"], runAttr["xvalLabel"], runAttr["Instance"])
 
+#TODO: Move this to after Condor/Avrora script
 def parseEnergyMonitorOutput(avroraLogFile, runAttr):
 
 	simulationDuration = runAttr["SimulationDuration"]
@@ -146,39 +166,28 @@ def parseEnergyMonitorOutput(avroraLogFile, runAttr):
 	runAttr["Network Lifetime days"] = float(networkLifetime)/60.0/60.0/24.0
 
 
-def initRunAttr(exprAttr, x, xValLabel, xValAttr, instance, plat, task):
-	runAttr = exprAttr.copy()
-	runAttr["Platform"] = plat
-	#set fixed parameters for the experiments
-	runAttr["PhysicalSchema"] = runAttr["PhysicalSchemas"]
-	runAttr["RadioLossRate"] = runAttr["RadioLossRates"]
-	runAttr["AcquisitionRate"] = runAttr["AcquisitionRates"]
-	#overwrite variable param
-	runAttr[xValAttr] = x
-	runAttr["xvalLabel"] = xValLabel
-	runAttr["Instance"] = instance
-	obtainNetworkTopologyAttributes(runAttr)
-	runAttr["Task"] = task
-	return runAttr
 
-def runINSNEE(task,xVals,instance,xValLabels,xValAttr,exprAttr,runAttrCols,rootOutputDir):
+def runINSNEE(task,xVal,xValLabel,xValAttr,instance,exprAttr,runAttrCols,rootOutputDir):
 	global sneeRoot
 	
-	runAttr = initRunAttr(exprAttr, x, xValLabel, xValAttr, instance, 'INSNEE', task)
-	runAttr["Query"] = tasks2queries[task]
-
-	print "\n**********Experiment="+runAttr['Experiment']+" Platform=INSNEE task="+task+" x="+x + " xLabel="+xValLabel+" instance="+instance
+	print "\n**********Experiment="+exprAttr['Experiment']+" Platform=INSNEE task="+task+" x="+xVal + " xLabel="+xValLabel+" instance="+str(instance)
+	
+	runAttr = initRunAttr(exprAttr, xVal, xValLabel, xValAttr, instance, 'INSNEE', task)
+	runAttr["Query"] = SneeqlLib.tasks2queries[task]
 
 	#check if equiv experiment run exists
 	#if (runAttr['Experiment'],'INSNEE') in equivRuns.dict:
 	#equivRuns.copyExperimentRunResults(runAttr, rootOutputDir)
 	#else:
 
-	#1 Compile SNEEql query
-	SneeqlLib.compileQuery(runAttr)
+	#1 Compile SNEEql query and compile the nesC to generate the Avrora binaries
+	#SneeqlLib.compileQuery(runAttr)
 
-	# Generate the Avrora Binaries
-	SneeqlLib.generateAvroraBinaries(runAttr)
+	#2 Extract the Avrora binaries from SNEETemporaryFiles folder,
+	#put them in AvroraJobs folder
+	#with avrora CommandString.txt
+	#avrora topology file
+	#### SneeqlLib.extractAvroraFiles(runAttr)
 		
 	#TODO: if Condor flag is not set?
 	#2 Run the query in Avrora
@@ -199,8 +208,9 @@ def runINSNEE(task,xVals,instance,xValLabels,xValAttr,exprAttr,runAttrCols,rootO
 	
 
 def runExperiment(exprAttr, exprAttrCols, outputDir):
-	global optPlatList
+	global optPlatList, optNumInstances
 
+	print "runExperiments"
 	runAttrCols = exprAttrCols + ["BufferingFactor", "Platform", "Task", "xvalLabel", "Instance", "SNEEExitCode", "NetworkSize", "Layout", "NetworkDensity","NetworkPercentSources", "SimulationDuration", "Tuple Acq Count", "Tuple Del Count", "Tuple Delta Sum", "Data Freshness", "Output Rate", "Delivery Rate", "Sum Energy", "Sum Energy 6M", "Max Energy", "Average Energy", "CPU Energy", "Sensor Energy", "Other Energy", "Network Lifetime secs", "Network Lifetime days", "Comments"]
 
 	tasks = exprAttr["Tasks"].split(";")
@@ -210,14 +220,12 @@ def runExperiment(exprAttr, exprAttrCols, outputDir):
 
 	for plat in optPlatList:	
 		for task in tasks:
-			for (x,xValLabel) in zip(xVals,xValLabels):
+			for (xVal,xValLabel) in zip(xVals,xValLabels):
 				for i in range(1,optNumInstances+1):
 					#if (plat == "MHOSC"):
 					#	runMHOSCExperiment(task,xVals,xValLabels,xValAttr,exprAttr,runAttrCols,outputDir)
 					if (plat == "INSNEE"):
-						runINSNEE(task,xVals,i,xValLabels,xValAttr,exprAttr,runAttrCols,outputDir)
-					
-
+						runINSNEE(task,xVal,xValLabel,xValAttr,i,exprAttr,runAttrCols,outputDir)
 				
 def runExperiments(timeStamp, outputDir):
 	colNames = None

@@ -1,0 +1,5 @@
+Experiment,XvalAttr,Y,Tasks,XvalLabels,PhysicalSchemas,RadioLossRates,AcquisitionRates
+1a,PhysicalSchema,Lifetime,raw;aggr;OD,9;25;100,n9_random_d3_s80;n25_random_d3_s80;n100_random_d3_s80,0,128
+2a,PhysicalSchema,Lifetime,raw;aggr;OD,linear;grid;random,n25_linear_d3_s80;n25_grid_d3_s80;n25_random_d3_s80,0,32
+3a,PhysicalSchema,TotalEnergy,raw;corr1;LR,1;2;3;8,n25_random_d1_s20;n25_random_d2_s20;n25_random_d8_s20,0,32
+4a,AcquisitionRate,Lifetime,raw,1;2;4;8;16;32;64;128,n25_random_d3_s80,0,1;2;4;8;16;64

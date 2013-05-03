@@ -53,7 +53,7 @@ def generateScenarios():
 
 	for nSize in nSizes:
 		for nDensity in nDensities:
-			for instance in range(1,optNumInstances):
+			for instance in range(1,optNumInstances+1):
 				#create random layout
 				(sneeTopFname,avroraTopFname)=networkLib.getTopologyFilenames(scenarioDir,nSize,"random",nDensity, instance)
 				allConnected = False

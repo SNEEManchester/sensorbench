@@ -45,7 +45,7 @@ def check_dir(d):
 def generateTopBlurb():
 	check_dir(optCondorDir)
 	condorFile = open(optCondorDir + pathSeperator + "submit.txt", "w") 
-	condorFile.write("universe = vanilla \n executable = start.sh \n when_to_transfer_output = ON_EXIT \n Should_Transfer_Files = YES \n transfer_input_files = ../SNEE.jar,../jre.tar.gz \n Requirements = (OpSys == \"LINUX\") &&(HAS_STANDARD_IMAGE =?= True) \n Request_Disk = 3000000 \n request_memory = 2048 \n #Output = output$(Process).txt \n #Error = error$(Process).txt \n log = log.txt \n Output = out.txt \n Error = err.txt \n notification = error \n\n\n")
+	condorFile.write("universe = vanilla \n executable = start.sh \n when_to_transfer_output = ON_EXIT \n Should_Transfer_Files = YES \n transfer_input_files = ../avrora-1.7.113.jar,../jre.tar.gz,../%s \n Requirements = (OpSys == \"LINUX\") &&(HAS_STANDARD_IMAGE =?= True) \n Request_Disk = 3000000 \n request_memory = 2048 \n #Output = output$(Process).txt \n #Error = error$(Process).txt \n log = log.txt \n Output = out.txt \n Error = err.txt \n notification = error \n\n\n" %(optBinaryDir+".zip"))
 	
 
 
@@ -100,6 +100,13 @@ def moveCollections():
 	shutil.copyfile("jre.tar.gz", optCondorDir + pathSeperator + "jre.tar.gz")
 
 
+
+def generateAvroraCode():
+	avroraCode = open(optCondorDir + pathSeperator + "start.sh", "w")
+	bineryZipFolder = optBinaryDir+".zip"
+	
+	avroraCode.write("#!/bin/bash \n echo $1 \n\n  unzip avrora-1.7.113.jar -d avrora \n rm avrora-1.7.113.jar \n mv jre.tar.gz avrora/jre.tar.gz \n mv %s avrora/%s \n cd  avrora \n tar -zxf jre.tar.gz \n rm jre.tar.gz \n unzip %s -d %s \n mv $1/* . \n rm %s \n rm -rf %s \n line=$(head -n 1 \"commandLine.txt\") \n	jre1.6.0_27/bin/java $line \n exit 0" %(bineryZipFolder, bineryZipFolder, bineryZipFolder, optBinaryDir, bineryZipFolder, optBinaryDir))
+
 def main(): 	
 	global optScenarioDir
 
@@ -107,6 +114,8 @@ def main():
 	parseArgs(sys.argv[1:]) 
 	generateScript()
 	moveCollections()
+
+	generateAvroraCode()
   
 
 

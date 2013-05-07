@@ -576,13 +576,13 @@ def generatePhysicalSchema(numNodes, percentSources, universalExtent, eastExtent
     outFile.writelines(schemaStr)
     outFile.close()
 
-def getPhysicalSchemaFilename(folderName,nSize,nType,nDensity,nSourcePercent,instanceValue):
-	physSchemaFname = "%sn%d_%s_d%d_s%d_%d_physical_schema.xml" % (folderName,nSize,nType,nDensity,nSourcePercent,instanceValue)
+def getPhysicalSchemaFilename(nSize,nType,nDensity,nSourcePercent,instanceValue):
+	physSchemaFname = "n%d_%s_d%d_s%d_%d_physical_schema.xml" % (nSize,nType,nDensity,nSourcePercent,instanceValue)
 	return physSchemaFname
 
-def getTopologyFilenames(folderName,nSize,nType,nDensity,instanceValue):
-	sneeTopFname = "%sn%d_%s_d%d_%d_topology.xml" % (folderName,nSize,nType,nDensity,instanceValue)
-	avroraTopFname = "%sn%d_%s_%d_%d.top" % (folderName,nSize,nType,nDensity,instanceValue)
+def getTopologyFilenames(nSize,nType,nDensity,instanceValue):
+	sneeTopFname = "n%d_%s_d%d_%d_topology.xml" % (nSize,nType,nDensity,instanceValue)
+	avroraTopFname = "n%d_%s_%d_%d.top" % (nSize,nType,nDensity,instanceValue)
 	return (sneeTopFname,avroraTopFname)
 	
 def testLinearTopologyGenerator():

@@ -2,7 +2,6 @@
 import os, sys, networkLib, math, getopt, UtilLib
 
 optScenarioDir = "scenarios"
-pathSeperator = os.sep
 #NOTE: For mica2 radio range is 60m, for micaz radio range is 15m!!!
 
 nSizes = [9, 25, 100]
@@ -46,16 +45,16 @@ def check_dir(d):
 		os.makedirs(d)
 
 def generateScenarios():
-	global optScenarioDir, pathSeperator
+	global optScenarioDir
 
 	check_dir(optScenarioDir)
-	scenarioDir = optScenarioDir + pathSeperator
+	scenarioDir = optScenarioDir + os.sep
 
 	for nSize in nSizes:
 		for nDensity in nDensities:
 			for instance in range(1,optNumInstances+1):
 				#create random layout
-				(sneeTopFname,avroraTopFname)=networkLib.getTopologyFilenames(scenarioDir,nSize,"random",nDensity, instance)
+				(sneeTopFname,avroraTopFname)=networkLib.getTopologyFilenames(nSize,"random",nDensity, instance)
 				allConnected = False
 				retries = 0
 				while (not allConnected) and (retries < 100):
@@ -66,33 +65,33 @@ def generateScenarios():
 					if not allConnected:
 						print "ERROR: giving up on random topology for n=%d, rval=%d" % (nSize, nDensity)
 					else:    
-						field.generateTopFile(avroraTopFname) # avrora topology file
-						field.generateSneeqlNetFile(sneeTopFname) # snee topology file
+						field.generateTopFile(optScenarioDir+os.sep+avroraTopFname) # avrora topology file
+						field.generateSneeqlNetFile(optScenarioDir+os.sep+sneeTopFname) # snee topology file
 						for nSourcePercent in nSourcesPercent:
-							physSchemaFname = networkLib.getPhysicalSchemaFilename(scenarioDir,nSize,"random",nDensity,nSourcePercent, instance)
-							networkLib.generatePhysicalSchema(nSize, nSourcePercent, universalExtent, eastExtent, westExtent, sneeTopFname, physSchemaFname) #snee physical Schema
+							physSchemaFname = networkLib.getPhysicalSchemaFilename(nSize,"random",nDensity,nSourcePercent, instance)
+							networkLib.generatePhysicalSchema(nSize, nSourcePercent, universalExtent, eastExtent, westExtent, sneeTopFname, optScenarioDir+os.sep+physSchemaFname) #snee physical Schema
 
 			#create linear layout
 			for instance in range(1,optNumInstances):
-				(sneeTopFname,avroraTopFname)=networkLib.getTopologyFilenames(scenarioDir,nSize,"linear",nDensity, instance)
+				(sneeTopFname,avroraTopFname)=networkLib.getTopologyFilenames(nSize,"linear",nDensity, instance)
 				field = networkLib.generateLinearTopology(instance, numNodes = nSize, radioRange = 15, rValue = nDensity)
-				field.generateTopFile(avroraTopFname)
-				field.generateSneeqlNetFile(sneeTopFname)
+				field.generateTopFile(optScenarioDir+os.sep+avroraTopFname)
+				field.generateSneeqlNetFile(optScenarioDir+os.sep+sneeTopFname)
 				for nSourcePercent in nSourcesPercent:
-					physSchemaFname = networkLib.getPhysicalSchemaFilename(scenarioDir,nSize,"linear",nDensity,nSourcePercent, instance)
-					networkLib.generatePhysicalSchema(nSize, nSourcePercent, universalExtent, eastExtent, westExtent, sneeTopFname, physSchemaFname)
+					physSchemaFname = networkLib.getPhysicalSchemaFilename(nSize,"linear",nDensity,nSourcePercent, instance)
+					networkLib.generatePhysicalSchema(nSize, nSourcePercent, universalExtent, eastExtent, westExtent, sneeTopFname, optScenarioDir+os.sep+physSchemaFname)
 
 			#create grid layout
 			for instance in range(1,optNumInstances):
-				(sneeTopFname,avroraTopFname)=networkLib.getTopologyFilenames(scenarioDir,nSize,"grid",nDensity, instance)
+				(sneeTopFname,avroraTopFname)=networkLib.getTopologyFilenames(nSize,"grid",nDensity, instance)
 				numNodesX = int(math.sqrt(nSize))
 				numNodesY = numNodesX 
 				field = networkLib.generateGridTopology(instance, numNodesX = numNodesX, numNodesY = numNodesY, radioRange = 15, rValue = nDensity)
-				field.generateTopFile(avroraTopFname)
-				field.generateSneeqlNetFile(sneeTopFname)
+				field.generateTopFile(optScenarioDir+os.sep+avroraTopFname)
+				field.generateSneeqlNetFile(optScenarioDir+os.sep+sneeTopFname)
 				for nSourcePercent in nSourcesPercent:
-					physSchemaFname = networkLib.getPhysicalSchemaFilename(scenarioDir,nSize,"grid",nDensity,nSourcePercent, instance)
-					networkLib.generatePhysicalSchema(nSize, nSourcePercent, universalExtent, eastExtent, westExtent, sneeTopFname, physSchemaFname)
+					physSchemaFname = networkLib.getPhysicalSchemaFilename(nSize,"grid",nDensity,nSourcePercent, instance)
+					networkLib.generatePhysicalSchema(nSize, nSourcePercent, universalExtent, eastExtent, westExtent, sneeTopFname, optScenarioDir+os.sep+physSchemaFname)
 
 def main(): 	
 	global optScenarioDir

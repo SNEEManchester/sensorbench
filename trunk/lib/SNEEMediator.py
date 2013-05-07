@@ -1,4 +1,4 @@
-import os
+import os, shutil, sys, re, string
 
 sneeRoot = os.getenv('SNEEROOT')
 
@@ -8,6 +8,30 @@ tasks2queries = {"raw" : "RSTREAM SELECT * FROM seaDefence[NOW];", \
 		 "corr2" : "RSTREAM SELECT e.seaLevel, w.seaLevel FROM seaDefenceEast[NOW] e, seaDefenceWest[FROM NOW TO NOW-1 SECOND] w WHERE e.seaLevel > w.seaLevel;", \
 		 "LR" : "RSTREAM SELECT * FROM seaDefence[NOW];", #TODO: provide correct query
 		 "OD" : "RSTREAM SELECT * FROM seaDefence[NOW];"} #TODO: provide correct query 
+
+def init(scenarioDir):
+	global sneeRoot, optScenarioDir
+
+	optScenarioDir = scenarioDir
+	
+	#copy scenarios to SNEE directory
+	#TODO: check whether top files are needed (prob not)
+	for f in os.listdir(scenarioDir):
+		shutil.copy(scenarioDir + os.sep + f, sneeRoot + os.sep + "etc")
+
+
+def cleanup(scenarioDir):
+	global sneeRoot
+	
+	#remove scenario files from SNEE directory
+	for f in os.listdir(scenarioDir):
+		scenarioFile = sneeRoot + os.sep + "etc" + os.sep + f
+		if os.path.exists(scenarioFile):
+			os.remove(scenarioFile)
+
+def getSneeRoot():
+	global sneeRoot
+	return sneeRoot
 
 def createSNEEPropertiesFile(runAttr):
 	global sneeRoot
@@ -237,18 +261,18 @@ def compileQuery(runAttr):
 	print commandStr
 	exitVal = os.system(commandStr)
 	
-	runAttr['SNEEExitCode'] = exitVal
+	runAttr['ExitCode'] = exitVal
 
 	if exitVal==0:
 		runAttr['BufferingFactor'] = getBufferingFactor()
 
-def getElfString(numNodes):
+def getElfString(numNodes, avroraElfDir):
 	elfs = []
 	ones = []
 	for i in range(0, numNodes):
-		fileName = "mote"+str(i)+".elf"
+		fileName = avroraElfDir + os.sep + "mote"+str(i)+".elf"
 		if os.path.exists(fileName):
-			elfs += [fileName]
+			elfs += [os.path.basename(fileName)]
 		else:
 			elfs += ["Blink.elf"]
 		ones += ['1']
@@ -261,33 +285,83 @@ def getSensorDataString(numNodes):
 		sensorData += ["light:"+str(i)+":."]
 	return string.join(sensorData,',')
 
-#Tests a candidate plan using Avrora
-#MAYBE SHOULDN'T BE HERE - PUT HERE FOR NOW
-def runSNEEInAvrora(runAttr, runAttrCols):
-	global sneeRoot
-
-	nescRootDir = sneeRoot + os.sep + "output" + os.sep + "query1" + os.sep + "avrora_micaz_t2"
-	os.chdir(nescRootDir)
-	
+def getAvroraCommandString(runAttr, runAttrCols, avroraElfDir):
 	simDuration = int(runAttr["AcquisitionRate"])*runAttr["BufferingFactor"]
 	runAttr["SimulationDuration"] = simDuration
-	
+
 	sensorDataString = getSensorDataString(runAttr['NetworkSize'])
-	(elfString, nodeCountString) = getElfString(runAttr['NetworkSize'])
-	avroraLogFile = generateAvroraLogfileName(runAttr)
+	(elfString, nodeCountString) = getElfString(runAttr['NetworkSize'], avroraElfDir)
+	#avroraLogFile = generateAvroraLogfileName(runAttr) #move this
 
-	#topologyStr = ""
-	topologyStr = "-topology=static -topology-file="+sneeRoot+"/etc/"+runAttr['AvroraTopologyFilename']
-	
+	topologyStr = "-topology=static -topology-file="+runAttr['AvroraTopologyFilename']
+
         #NB: removed serial monitor, not needed as using c-print
-	commandStr = "java avrora.Main -mcu=mts300 -platform=micaz -simulation=sensor-network %s -seconds=%d -monitors=leds,packet,energy,c-print -ports=0:0:2390 -random-seed=1 -sensor-data=%s -report-seconds -colors=false -nodecount=%s  %s > %s" % (topologyStr, simDuration, sensorDataString, nodeCountString, elfString, avroraLogFile)
+	commandStr = "java avrora.Main -mcu=mts300 -platform=micaz -simulation=sensor-network %s -seconds=%d -monitors=leds,packet,energy,c-print -ports=0:0:2390 -random-seed=1 -sensor-data=%s -report-seconds -colors=false -nodecount=%s  %s" % (topologyStr, simDuration, sensorDataString, nodeCountString, elfString)
+	
+	return commandStr
 
-	print commandStr
+def generateAvroraJob(task,xVal,xValLabel,xValAttr,instance,runAttr,runAttrCols,rootOutputDir, runOutputDir, avroraJobsRootDir):
+	global sneeRoot, optScenarioDir
+
+	runAttr["Query"] = tasks2queries[task]
+
+	#check if equiv experiment run exists
+	#if (runAttr['Experiment'],'INSNEE') in equivRuns.dict:
+	#equivRuns.copyExperimentRunResults(runAttr, rootOutputDir)
+	#else:
+
+	#1 Compile SNEEql query and compile the nesC to generate the Avrora binaries
+	compileQuery(runAttr)
+
+	sneeOutputDir = sneeRoot + os.sep + "output" + os.sep + "query1" + os.sep
+
+	#2 Archive the output of SNEE in case we need to do a post mortem later
+	tempSneeFilesRootDir = rootOutputDir + os.sep + "tempSNEEFiles" + os.sep + runOutputDir
+	shutil.copytree(sneeOutputDir + "query-plan", tempSneeFilesRootDir+ os.sep + "query-plan")
+	if (os.path.exists(sneeOutputDir + "avrora_micaz_t2")):
+		shutil.copytree(sneeOutputDir + "avrora_micaz_t2", tempSneeFilesRootDir+ os.sep + "avrora_micaz_t2")
+	shutil.copyfile(sneeRoot + os.sep + "logs/snee.log", tempSneeFilesRootDir + os.sep + "snee.log")
+	
+	#3 Create AvroraJobs folder
+	if (runAttr['ExitCode']==0):
+		#create dir for Avrora Job
+		avroraJobDir = avroraJobsRootDir+os.sep+runOutputDir 
+		os.makedirs(avroraJobDir)
+
+		#Copy elf files to Avrora Job dir
+		avroraElfDir = sneeOutputDir + "avrora_micaz_t2"
+		if (os.path.exists(avroraElfDir)):
+			for f in os.listdir(avroraElfDir):
+				if (f.endswith(".elf")):
+				    shutil.copy(avroraElfDir + os.sep + f, avroraJobDir)
+
+		#Copy top file for avrora
+		avroraTopFile = optScenarioDir + os.sep + runAttr['AvroraTopologyFilename']
+		shutil.copy(avroraTopFile, avroraJobDir)
+				    
+		#Create Avrora CommandString.txt
+		avroraCommandStr = getAvroraCommandString(runAttr, runAttrCols, avroraElfDir)
+		avroraCommandStrFileName = avroraJobDir + os.sep + "avroraCommandString.txt"
+		avroraCommandStrFile = open(avroraCommandStrFileName, "w")
+		avroraCommandStrFile.writelines(avroraCommandStr)
+
+
+#Tests a candidate plan using Avrora
+#MAYBE SHOULDN'T BE HERE - PUT HERE FOR NOW
+def runInAvrora():
+	global sneeRoot
+
+	#this will be the Avrora Job Directory
+	nescRootDir = sneeRoot + os.sep + "output" + os.sep + "query1" + os.sep + "avrora_micaz_t2"
+	os.chdir(nescRootDir)
+
+	commandStr = getAvroraCommandString(runAttr, runAttrCols)
 
 	#comment out when debugging
 	os.system(commandStr)
 	#sys.exit()
 
+	#The following will happen outside Condor
 	#get values for freshness of data, output rate
 	parseAcquireDeliverTimes.parse(avroraLogFile, runAttr, True)
 	

@@ -1,13 +1,13 @@
 #!/usr/bin/python
 
 import re, getopt, logging, sys, os, string, UtilLib, CSVLib, AvroraLib, networkLib, shutil
-import SneeqlLib
+import SNEEMediator
 import parseAcquireDeliverTimes, equivRuns #TODO: Move these to where they are needed
+
+optScenarioDir = os.getcwd() + os.sep + "scenarios"
 
 optLabel = ""
 optOutputDir = os.getenv('HOME')+os.sep+"tmp"+os.sep+"sensebench"+os.sep
-tempSneeFilesDir = optOutputDir + "tempSNEEFiles" #Move to SNEElib
-avroraJobDir = optOutputDir + "avroraJobs" #Move to SNEELib
 
 #Default list of platforms to run experiments over
 #optPlatList = ["MHOSC", "INSNEE"]
@@ -26,9 +26,9 @@ optNumInstances = 2
 optUseCondor = True
 
 def parseArgs(args):	
-	global optOutputDir, optPlatList, optExprList, optNumInstances, optUseCondor
+	global optScenarioDir, optOutputDir, optPlatList, optExprList, optNumInstances, optUseCondor
 	try:
-		optNames = ["outputdir=", "plat=", "exp=", "num-instances=", "use-condor="]
+		optNames = ["scenario-dir=", "outputdir=", "plat=", "exp=", "num-instances=", "use-condor="]
 	
 		#append the result of getOpNames to all the libraries 
 		optNames = UtilLib.removeDuplicates(optNames)
@@ -40,6 +40,10 @@ def parseArgs(args):
 		sys.exit(2)
 			
 	for o, a in opts:
+		if (o == "--scenario-dir"):
+			optScenarioDir = a;
+		if (o == "--output-dir"):
+			optOutputDir = a;
 		if (o == "--plat"):
 			optPlatList = a.split(',')
 		if (o == "--exp"):
@@ -122,8 +126,8 @@ def obtainNetworkTopologyAttributes(runAttr):
 		runAttr['Layout'] = m.group(2)
 		runAttr['NetworkDensity'] = int(m.group(3))
 		runAttr['NetworkPercentSources'] = int(m.group(4))
-		runAttr['PhysicalSchemaFilename'] = networkLib.getPhysicalSchemaFilename("",runAttr['NetworkSize'],runAttr['Layout'],runAttr['NetworkDensity'],runAttr['NetworkPercentSources'],runAttr['Instance'])
-		(runAttr['SNEETopologyFilename'],runAttr['AvroraTopologyFilename']) = networkLib.getTopologyFilenames("", runAttr['NetworkSize'],runAttr['Layout'],runAttr['NetworkDensity'],runAttr['Instance'])
+		runAttr['PhysicalSchemaFilename'] = networkLib.getPhysicalSchemaFilename(runAttr['NetworkSize'],runAttr['Layout'],runAttr['NetworkDensity'],runAttr['NetworkPercentSources'],runAttr['Instance'])
+		(runAttr['SNEETopologyFilename'],runAttr['AvroraTopologyFilename']) = networkLib.getTopologyFilenames(runAttr['NetworkSize'],runAttr['Layout'],runAttr['NetworkDensity'],runAttr['Instance'])
 	else:
 		print "ERROR: physical schema filename %s does not conform to standard format" % (physicalSchemaName)
 		sys.exit(2)
@@ -166,52 +170,14 @@ def parseEnergyMonitorOutput(avroraLogFile, runAttr):
 	runAttr["Network Lifetime days"] = float(networkLifetime)/60.0/60.0/24.0
 
 
-
-def runINSNEE(task,xVal,xValLabel,xValAttr,instance,exprAttr,runAttrCols,rootOutputDir):
-	global sneeRoot
-	
-	print "\n**********Experiment="+exprAttr['Experiment']+" Platform=INSNEE task="+task+" x="+xVal + " xLabel="+xValLabel+" instance="+str(instance)
-	
-	runAttr = initRunAttr(exprAttr, xVal, xValLabel, xValAttr, instance, 'INSNEE', task)
-	runAttr["Query"] = SneeqlLib.tasks2queries[task]
-
-	#check if equiv experiment run exists
-	#if (runAttr['Experiment'],'INSNEE') in equivRuns.dict:
-	#equivRuns.copyExperimentRunResults(runAttr, rootOutputDir)
-	#else:
-
-	#1 Compile SNEEql query and compile the nesC to generate the Avrora binaries
-	#SneeqlLib.compileQuery(runAttr)
-
-	#2 Extract the Avrora binaries from SNEETemporaryFiles folder,
-	#put them in AvroraJobs folder
-	#with avrora CommandString.txt
-	#avrora topology file
-	#### SneeqlLib.extractAvroraFiles(runAttr)
-		
-	#TODO: if Condor flag is not set?
-	#2 Run the query in Avrora
-	#if (runAttr['SNEEExitCode']==0):
-	#	runSNEEInAvrora(runAttr, runAttrCols)
-
-	#copy SNEE/nesC/avrora files over
-	#runOutputDir = getRunOutputDir(runAttr, rootOutputDir, task) 
-	#os.makedirs(runOutputDir)
-	#sneeOutputDir = sneeRoot + os.sep + "output" + os.sep + "query1" + os.sep
-	#shutil.copytree(sneeOutputDir + "query-plan", runOutputDir+ os.sep + "query-plan")
-	#if (os.path.exists(sneeOutputDir + "avrora_micaz_t2")):
-	#	shutil.copytree(sneeOutputDir + "avrora_micaz_t2", runOutputDir+ os.sep + "avrora_micaz_t2")
-	#shutil.copyfile(sneeRoot + os.sep + "logs/snee.log", runOutputDir + os.sep + "snee.log")
-
-        #3 Log the results
-	#logResultsToFiles(runAttr, runAttrCols, rootOutputDir)
-	
+def getRunOutputDir(runAttr, rootOutputDir, task):
+	return "exp"+runAttr["Experiment"]+"-"+runAttr["Platform"]+"-x"+runAttr["xvalLabel"]+"-"+task+"-"+str(runAttr["Instance"])
 
 def runExperiment(exprAttr, exprAttrCols, outputDir):
 	global optPlatList, optNumInstances
 
 	print "runExperiments"
-	runAttrCols = exprAttrCols + ["BufferingFactor", "Platform", "Task", "xvalLabel", "Instance", "SNEEExitCode", "NetworkSize", "Layout", "NetworkDensity","NetworkPercentSources", "SimulationDuration", "Tuple Acq Count", "Tuple Del Count", "Tuple Delta Sum", "Data Freshness", "Output Rate", "Delivery Rate", "Sum Energy", "Sum Energy 6M", "Max Energy", "Average Energy", "CPU Energy", "Sensor Energy", "Other Energy", "Network Lifetime secs", "Network Lifetime days", "Comments"]
+	runAttrCols = exprAttrCols + ["BufferingFactor", "Platform", "Task", "xvalLabel", "Instance", "ExitCode", "NetworkSize", "Layout", "NetworkDensity","NetworkPercentSources", "SimulationDuration", "Tuple Acq Count", "Tuple Del Count", "Tuple Delta Sum", "Data Freshness", "Output Rate", "Delivery Rate", "Sum Energy", "Sum Energy 6M", "Max Energy", "Average Energy", "CPU Energy", "Sensor Energy", "Other Energy", "Network Lifetime secs", "Network Lifetime days", "Comments"]
 
 	tasks = exprAttr["Tasks"].split(";")
 	xValAttr = exprAttr["XvalAttr"]
@@ -221,11 +187,35 @@ def runExperiment(exprAttr, exprAttrCols, outputDir):
 	for plat in optPlatList:	
 		for task in tasks:
 			for (xVal,xValLabel) in zip(xVals,xValLabels):
-				for i in range(1,optNumInstances+1):
-					#if (plat == "MHOSC"):
-					#	runMHOSCExperiment(task,xVals,xValLabels,xValAttr,exprAttr,runAttrCols,outputDir)
+				for instance in range(1,optNumInstances+1):
+					exprAttr["Instance"] = instance
+					print "\n**********Experiment="+exprAttr['Experiment']+" Platform="+plat+" task="+task+" x="+xVal + " xLabel="+xValLabel+" instance="+str(exprAttr["Instance"])	
+					runAttr = initRunAttr(exprAttr, xVal, xValLabel, xValAttr, instance, plat, task)
+					runOutputDir = getRunOutputDir(runAttr, avroraJobsRootDir, task)
+
 					if (plat == "INSNEE"):
-						runINSNEE(task,xVal,xValLabel,xValAttr,i,exprAttr,runAttrCols,outputDir)
+						SNEEMediator.generateAvroraJob(task,xVal,xValLabel,xValAttr,instance,runAttr,runAttrCols,outputDir, runOutputDir, avroraJobsRootDir)
+					#TODO: MHOSC
+					#elif (plat == "MHOSC"):
+					#	MHOSCMediator.generateAvroraJob(task,xVals,xValLabels,xValAttr,instance,runAttr,runAttrCols,outputDir, runOutputDir)
+					#TODO: OD
+					#elif (plat == "OD"):
+					#	ODMediator.generateAvroraJob(task,xVals,xValLabels,xValAttr,instance,runAttr,runAttrCols,outputDir, runOutputDir)
+					#TODO: TinyDB
+					#elif (plat == "TinyDB"):
+					#	TinyDBMediator.generateAvroraJob(task,xVals,xValLabels,xValAttr,instance,runAttr,runAttrCols,outputDir, runOutputDir)
+					else:
+						print "Error: Platform %s not supported" % (plat)
+						sys.exit(2)
+
+					#TODO: If not using Condor, run Avrora now
+					#if (not optUseCondor):
+					#	runAvroraJob(runAttr, runAttrCols)
+
+					#TODO: 3 Log the results
+					#logResultsToFiles(runAttr, runAttrCols, rootOutputDir)
+					
+					sys.exit(0)
 				
 def runExperiments(timeStamp, outputDir):
 	colNames = None
@@ -251,6 +241,22 @@ def runExperiments(timeStamp, outputDir):
 		#Experiment,X,Y,Tasks,Xlabels,Network,RadioLossRate,AcquisitionRate
 		runExperiment(exprAttr, exprAttrCols, outputDir)
 						
+def init(timeStamp):
+	global avroraJobsRootDir, optOutputDir
+
+	if (not os.path.isdir(optScenarioDir)):
+		print "Scenarios directory %s not found" % (optScenarioDir)
+		sys.exit(2)
+	#will need to call init method for all platforms
+	SNEEMediator.init(optScenarioDir)	
+
+	optOutputDir += os.sep+timeStamp
+
+	avroraJobsRootDir = optOutputDir + os.sep + "avroraJobs"
+
+def cleanup():
+	SNEEMediator.cleanup(optScenarioDir)
+
 
 def main(): 	
 	global optScenarioDir, optOutputDir, optUseCondor
@@ -259,13 +265,12 @@ def main():
 	parseArgs(sys.argv[1:]) 
 
 	timeStamp = UtilLib.getTimeStamp()
-	#if (not optTimeStampOutput):
-	#	timeStamp = ""
 	startLogger(timeStamp)
+	init(timeStamp)
 	
-	#RandomSeeder.setRandom()
-	
-	runExperiments(timeStamp, optOutputDir+os.sep+timeStamp)
+	runExperiments(timeStamp, optOutputDir)
+
+	cleanup()
 
 if __name__ == "__main__":
 	main()

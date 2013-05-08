@@ -17,7 +17,7 @@ def init(scenarioDir):
 	#copy scenarios to SNEE directory
 	#TODO: check whether top files are needed (prob not)
 	for f in os.listdir(scenarioDir):
-		shutil.copy(scenarioDir + os.sep + f, sneeRoot + os.sep + "etc")
+		shutil.copy(str(scenarioDir) + str(os.sep) + str(f), str(sneeRoot) + str(os.sep) + "etc")
 
 
 def cleanup(scenarioDir):

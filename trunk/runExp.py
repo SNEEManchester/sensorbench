@@ -42,20 +42,23 @@ def parseArgs(args):
 	for o, a in opts:
 		if (o == "--scenario-dir"):
 			optScenarioDir = a;
-		if (o == "--output-dir"):
+		elif (o == "--outputdir"):
 			optOutputDir = a;
-		if (o == "--plat"):
+		elif (o == "--plat"):
 			optPlatList = a.split(',')
-		if (o == "--exp"):
+		elif (o == "--exp"):
 			optExprList = a.split(',')
-		if (o == "--num-instances"):
+		elif (o == "--num-instances"):
 			optNumInstances = int(a)	
-		if (o == "--use-condor"):
+		elif (o == "--use-condor"):
 			optExprList = bool(a)
 		else:
 			usage()
 			sys.exit(2)
 
+
+def usage():
+		print "generate-scenarios.py --scenario-dir=<dir> --num-instances=<int> --outputdir=<dir> --plat=<MHOSC,INSEE> exp==<> --use-condor=<bool>"
 
 #Ouput info message to screen and logger if applicable
 def report(message):
@@ -79,12 +82,12 @@ def reportError(message):
 
 def startLogger(timeStamp):
 	global logger
-
+  
 	logger = logging.getLogger('test')
 
 	#create the directory if required
-	#if not os.path.isdir(optOutputDir):
-	#		os.makedirs(optOutputDir)
+	if not os.path.isdir(optOutputDir):
+			os.makedirs(optOutputDir)
 			
 	hdlr = logging.FileHandler('%s/%s-%s.log' % (optOutputDir, optLabel, timeStamp))
 	formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')

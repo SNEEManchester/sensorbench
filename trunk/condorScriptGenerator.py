@@ -102,7 +102,7 @@ def generateScriptForEachJob(exprAttr, exprAttrCols):
 	for plat in optPlatList:	
 		for task in tasks:
 			for (xVal,xValLabel) in zip(xVals,xValLabels):
-				for instance in range(1,optNumInstances):
+				for instance in range(1,optNumInstances+1):
 					runAttr = initRunAttr(exprAttr, xVal, xValLabel, xValAttr, instance, plat, task)
 					condorLine(task,xVal,xValLabel,xValAttr,exprAttr,instance,plat,runAttr)
 

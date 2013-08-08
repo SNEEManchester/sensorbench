@@ -43,9 +43,9 @@ def parseArgs(args):
 			
 	for o, a in opts:
 		if (o == "--scenario-dir"):
-			optScenarioDir = a;
+			optScenarioDir = a
 		elif (o == "--outputdir"):
-			optOutputDir = a;
+			optOutputDir = a
 		elif (o == "--plat"):
 			optPlatList = a.split(',')
 		elif (o == "--exp"):
@@ -157,22 +157,7 @@ def initRunAttr(exprAttr, x, xValLabel, xValAttr, instance, plat, task):
 def generateAvroraLogfileName(runAttr):
 	 return "%s-exp%s-x%s-i%s-avrora-log.txt" % (runAttr["Platform"], runAttr["Experiment"], runAttr["xvalLabel"], runAttr["Instance"])
 
-#TODO: Move this to after Condor/Avrora script
-def parseEnergyMonitorOutput(avroraLogFile, runAttr):
 
-	simulationDuration = runAttr["SimulationDuration"]
-	(sumEnergy, maxEnergy, averageEnergy, radioEnergy, cpu_cycleEnergy, sensorEnergy, otherEnergy, networkLifetime) = AvroraLib.computeEnergyValues(".", simulationDuration, avroraLogFile, ignoreLedEnergy = True, defaultSiteEnergyStock = 31320, siteLifetimeRankFile = None, sink = 0, ignoreList = [])
-	#All node energy in Joules for simulation duration
-	runAttr["Sum Energy"] = sumEnergy
-        #All node energy in Joules scaled to 6 month period
-	runAttr["Sum Energy 6M"] = sumEnergy*((60.0*60.0*24.0*30.0*6.0)/float(simulationDuration))
-	runAttr["Max Energy"] = maxEnergy
-	runAttr["Average Energy"] = averageEnergy
-	runAttr["CPU Energy"] = cpu_cycleEnergy
-	runAttr["Sensor Energy"] = sensorEnergy
-	runAttr["Other Energy"] = otherEnergy
-	runAttr["Network Lifetime secs"] = networkLifetime
-	runAttr["Network Lifetime days"] = float(networkLifetime)/60.0/60.0/24.0
 
 
 def getRunOutputDir(runAttr, rootOutputDir, task):

@@ -4,6 +4,7 @@ import re, getopt, logging, sys, os, string, UtilLib, CSVLib, AvroraLib, network
 import SNEEMediator
 import parseAcquireDeliverTimes, equivRuns #TODO: Move these to where they are needed
 
+#Directory to read the scenario files from
 optScenarioDir = os.getcwd() + os.sep + "scenarios"
 
 optLabel = ""
@@ -19,6 +20,7 @@ optPlatList = ["INSNEE"]
 #optExprList = ["1a", "1b", "2a", "2b", "3a", "3b", "4a", "4b", "5a", "5b", "6a", "6b", "7"]
 optExprList = ["1a"]
 
+#Parameter to determine number of instances of each scenario to run
 #optNumInstances = 10
 optNumInstances = 2
 
@@ -277,3 +279,4 @@ def main():
 
 if __name__ == "__main__":
 	main()
+

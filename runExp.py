@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import re, getopt, logging, sys, os, string, UtilLib, CSVLib, AvroraLib, networkLib, shutil
+import re, getopt, logging, sys, os, string, UtilLib, CSVLib, AvroraLib, networkLib, shutil, SBLib
 import SNEEMediator
 import parseAcquireDeliverTimes, equivRuns #TODO: Move these to where they are needed
 
@@ -99,24 +99,6 @@ def startLogger(timeStamp):
 	logger.info('Starting Regression Test')
 
 
-#this is after condor/avrora
-def logResultsToFile(runAttr, runAttrCols, resultsFileName):
-	if not os.path.exists(resultsFileName):
-		resultsFile = open(resultsFileName, "w")
-		resultsFile.writelines(CSVLib.header(runAttrCols))
-	
-	resultsFile = open(resultsFileName, "a")
-	resultsFile.writelines(CSVLib.line(runAttr, runAttrCols))
-	resultsFile.close()
-
-#this is after condor/avrora
-def logResultsToFiles(runAttr, runAttrCols, outputDir):
-	#Per-experiment/plaftform results file
-	resultsFileName = outputDir+os.sep+"exp"+runAttr["Experiment"]+"-"+runAttr["Platform"]+"-results.csv"
-	logResultsToFile(runAttr, runAttrCols, resultsFileName)
-	#All experiments results file
-	resultsFileName = outputDir+os.sep+"all-results.csv"
-	logResultsToFile(runAttr, runAttrCols, resultsFileName)
 
 def getRunDir(runAttr, task):
 	return "exp"+runAttr["Experiment"]+"-"+runAttr["Platform"]+"-x"+runAttr["xvalLabel"]+"-"+task+"-i"+runAttr["Instance"]
@@ -202,10 +184,11 @@ def runExperiment(exprAttr, exprAttrCols, outputDir):
 					#if (not optUseCondor):
 					#	runAvroraJob(runAttr, runAttrCols)
 
-					#TODO: 3 Log the results
-					#logResultsToFiles(runAttr, runAttrCols, rootOutputDir)
+					#3 Log the (partial) results
+					SBLib.logResultsToFiles(runAttr, runAttrCols, rootOutputDir)
 					
 					sys.exit(0)
+
 				
 def runExperiments(timeStamp, outputDir):
 	colNames = None
@@ -230,6 +213,7 @@ def runExperiments(timeStamp, outputDir):
 		exprAttr['TimeStamp']=timeStamp
 		#Experiment,X,Y,Tasks,Xlabels,Network,RadioLossRate,AcquisitionRate
 		runExperiment(exprAttr, exprAttrCols, outputDir)
+
 						
 def init(timeStamp):
 	global avroraJobsRootDir, optOutputDir
@@ -243,6 +227,7 @@ def init(timeStamp):
 	optOutputDir += os.sep+timeStamp
 
 	avroraJobsRootDir = optOutputDir + os.sep + "avroraJobs"
+
 
 def cleanup():
 	SNEEMediator.cleanup(optScenarioDir)

@@ -1,5 +1,7 @@
 #This library holds functions used by more than one sensebench script
 
+import os, CSVLib
+
 def logResultsToFile(runAttr, runAttrCols, resultsFileName):
 	if not os.path.exists(resultsFileName):
 		resultsFile = open(resultsFileName, "w")

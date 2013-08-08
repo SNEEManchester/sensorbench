@@ -1,4 +1,4 @@
-import os, sys, getopt
+import os, sys, getopt, SBLib
 
 optCondorOutputDir = os.getcwd()
 
@@ -16,9 +16,6 @@ def parseArgs(args):
 	for o, a in opts:
 		if (o == "--condor-output-dir"):
 			optCondorOutputDir = a
-
-
-#Reread CSV produced from runExperiments
 
 
 #TODO: Move this to after Condor/Avrora script
@@ -39,14 +36,40 @@ def parseEnergyMonitorOutput(avroraLogFile, runAttr):
 	runAttr["Network Lifetime days"] = float(networkLifetime)/60.0/60.0/24.0
 
 
+
+
+
+def processCondorResults():
+	for filename in os.listdir(optCondorOutputDir):
+		print filename
+
+	for line in open("experiments.csv", 'r'): #######TODO: find correct name
+		if first:
+			runAttrCols = CSVLib.colNameList(line)
+			first = False
+			continue
+
+		runAttr = CSVLib.line2Dict(line, runAttrCols)
+
+		#TODO: find folder for current line
+		#os.listdir(optCondorOutputDir)		
+
+		#TODO: find output file and process
+		#parseEnergyMonitorOutput(avroraLogFile, runAttr)
+
+	#SBLib.logResultsToFiles(runAttr, runAttrCols, outputDir)			
+
+
 def main():
 	global optCondorOutputDir
+
+	#Reread CSV produced from runExperiments
+
 
 	#parse the command-line arguments
 	parseArgs(sys.argv[1:]) 
 
-	for filename in os.listdir(optCondorOutputDir):
-		print filename	
+	processCondorResults()
 
 if __name__ == "__main__":
 	main()

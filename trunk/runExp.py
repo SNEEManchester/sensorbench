@@ -185,7 +185,7 @@ def runExperiment(exprAttr, exprAttrCols, outputDir):
 					#	runAvroraJob(runAttr, runAttrCols)
 
 					#3 Log the (partial) results
-					SBLib.logResultsToFiles(runAttr, runAttrCols, rootOutputDir)
+					SBLib.logResultsToFiles(runAttr, runAttrCols, optOutputDir)
 					
 					sys.exit(0)
 

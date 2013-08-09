@@ -1,13 +1,10 @@
 #!/usr/bin/python
 import re, os, sys, networkLib, math, getopt, UtilLib, CSVLib, shutil
 
-optNumInstances = 10
 optCondorDir = "condor"
-optBinaryDir = "avrora-Bineries"
+optBinaryDir = "avroraJobsTar"
 pathSeperator = os.sep
 
-optExprList = ["1a", "1b", "2a", "2b", "3a", "3b", "4a", "4b", "5a", "5b", "6a", "6b", "7"]
-optPlatList = ["INSNEE", "HC", "TinyDB", "MHOCS"]
 def parseArgs(args):	
 	global optScenarioDir
 	try:
@@ -45,7 +42,7 @@ def check_dir(d):
 def generateTopBlurb():
 	check_dir(optCondorDir)
 	condorFile = open(optCondorDir + pathSeperator + "submit.txt", "w") 
-	condorFile.write("universe = vanilla \n executable = start.sh \n when_to_transfer_output = ON_EXIT \n Should_Transfer_Files = YES \n transfer_input_files = ../avrora-1.7.113.jar,../jre.tar.gz,../%s \n Requirements = (OpSys == \"LINUX\") &&(HAS_STANDARD_IMAGE =?= True) \n Request_Disk = 3000000 \n request_memory = 2048 \n #Output = output$(Process).txt \n #Error = error$(Process).txt \n log = log.txt \n Output = out.txt \n Error = err.txt \n notification = error \n\n\n" %(optBinaryDir+".zip"))
+	condorFile.write("universe = vanilla \n executable = start.sh \n when_to_transfer_output = ON_EXIT \n Should_Transfer_Files = YES \n \n Requirements = (HAS_STANDARD_IMAGE =?= True) \n Request_Disk = 204800 \n request_memory = 512 \n #Output = output$(Process).txt \n #Error = error$(Process).txt \n log = log.txt \n Output = out.txt \n Error = err.txt \n notification = error \n\n\n")
 
 def getRunOutputDir(runAttr, task):
 	return "exp"+runAttr["Experiment"]+"-"+runAttr["Platform"]+"-x"+runAttr["xvalLabel"]+"-"+task+"-"+str(runAttr["Instance"])
@@ -81,50 +78,24 @@ def obtainNetworkTopologyAttributes(runAttr):
 		print "ERROR: physical schema filename %s does not conform to standard format" % (physicalSchemaName)
 		sys.exit(2)
 
-def condorLine(task,xVal,xValLabel,xValAttr,exprAttr,instance, plat, runAttr):
+def condorLine(file):
+	file = file.split('.')[0]
+	binaryFolderName = optBinaryDir + pathSeperator + file
 	condorFile = open(optCondorDir + pathSeperator + "submit.txt", "a") 
-	CONVENTION =getRunOutputDir(runAttr, task)
-	binaryFolderName = optBinaryDir + pathSeperator + CONVENTION
-	condorFile.write("Arguments = %s \n	initialdir   = %s \n	queue \n\n"%(binaryFolderName, CONVENTION))
-	check_dir(optCondorDir + pathSeperator + CONVENTION)
+	condorFile.write("transfer_input_files = ../avrora-1.7.113.jar,../jre.tar.gz,../%s.tar.gz \n" % (binaryFolderName))
+	condorFile.write("Arguments = %s.tar.gz %s \n	initialdir   = %s \n	queue \n\n" % (file, file, file))
+	check_dir(optCondorDir + pathSeperator + file)
 
-
-
-
-def generateScriptForEachJob(exprAttr, exprAttrCols):
-	global optPlatList, noInstances
-
-	tasks = exprAttr["Tasks"].split(";")
-	xValAttr = exprAttr["XvalAttr"]
-	xVals = exprAttr[xValAttr+"s"].split(";")
-	xValLabels = exprAttr["XvalLabels"].split(";")
-
-	for plat in optPlatList:	
-		for task in tasks:
-			for (xVal,xValLabel) in zip(xVals,xValLabels):
-				for instance in range(1,optNumInstances+1):
-					runAttr = initRunAttr(exprAttr, xVal, xValLabel, xValAttr, instance, plat, task)
-					condorLine(task,xVal,xValLabel,xValAttr,exprAttr,instance,plat,runAttr)
+def generateScriptForEachJob():
+	fileList = os.listdir(optBinaryDir)
+	for file in fileList:
+		condorLine(file)
 
 def generateScript():
-	colNames = None
-	first = True
-
-	for line in open("experiments.csv", 'r'):
-		if first:
-			exprAttrCols = CSVLib.colNameList(line)
-			exprAttrCols += ["TimeStamp"]
-			first = False
-			continue
-
-		exprAttr = CSVLib.line2Dict(line, exprAttrCols)
-
-		if not str(exprAttr['Experiment']) in optExprList:
-			continue
-
-		#Experiment,X,Y,Tasks,Xlabels,Network,RadioLossRate,AcquisitionRate
+    # writes top blurb for condor, which covers spec of machines, memory allocation, etc
 		generateTopBlurb()
-		generateScriptForEachJob(exprAttr, exprAttrCols)
+    #read in each folder from the avrora folder and make a top for it.
+		generateScriptForEachJob()
 
 
 def moveCollections():
@@ -147,7 +118,7 @@ def main():
 	parseArgs(sys.argv[1:]) 
 	generateScript()
 	generateAvroraCode()
-	moveCollections()
+	#moveCollections()
 
   
 

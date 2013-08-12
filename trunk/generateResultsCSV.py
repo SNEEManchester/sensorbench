@@ -1,9 +1,10 @@
-import os, sys, getopt, SBLib
+import os, sys, getopt, SBLib, CSVLib, AvroraLib
 
-optCondorOutputDir = os.getcwd()
+#The directory that contains the directories produced by condor with results
+optCondorOutputDir = os.getenv("HOME") + os.sep + "condor_results_6aug2013"
 
 def parseArgs(args):
-	global optCondorOutputDir
+	global optCondorOutputDir, optRunDataCSV
 
 	try:
 		optNames = ["condor-output-dir="]
@@ -18,7 +19,7 @@ def parseArgs(args):
 			optCondorOutputDir = a
 
 
-#TODO: Move this to after Condor/Avrora script
+
 def parseEnergyMonitorOutput(avroraLogFile, runAttr):
 
 	simulationDuration = runAttr["SimulationDuration"]
@@ -38,12 +39,15 @@ def parseEnergyMonitorOutput(avroraLogFile, runAttr):
 
 
 
-
 def processCondorResults():
-	for filename in os.listdir(optCondorOutputDir):
-		print filename
+	global optCondorOutputDir
 
-	for line in open("experiments.csv", 'r'): #######TODO: find correct name
+	resultsDir = optCondorOutputDir
+	os.chdir(resultsDir)
+
+	first = True 
+	#TODO: We need all-results.csv copied into condor output folder
+	for line in open("all-results.csv", 'r'):
 		if first:
 			runAttrCols = CSVLib.colNameList(line)
 			first = False
@@ -51,13 +55,16 @@ def processCondorResults():
 
 		runAttr = CSVLib.line2Dict(line, runAttrCols)
 
-		#TODO: find folder for current line
-		#os.listdir(optCondorOutputDir)		
+		#find folder with run results for current line in all-results.csv
+		runDirName = SBLib.getRunOutputDir(runAttr)
+		if (os.path.exists(optCondorOutputDir + os.sep + runDirName)):
+			print runDirName
+			avroraLogFile = runDirName + os.sep + "out.txt"
 
-		#TODO: find output file and process
-		#parseEnergyMonitorOutput(avroraLogFile, runAttr)
+			#TODO: find output file and process
+			#parseEnergyMonitorOutput(avroraLogFile, runAttr)
 
-	#SBLib.logResultsToFiles(runAttr, runAttrCols, outputDir)			
+		#SBLib.logResultsToFiles(runAttr, runAttrCols, outputDir)			
 
 
 def main():

@@ -18,7 +18,7 @@ optPlatList = ["INSNEE"]
 #optExprList = ['0a', '0b', '0c', '0d', '0e']
 #optExprList = ['alphaCalib2']
 #optExprList = ["1a", "1b", "2a", "2b", "3a", "3b", "4a", "4b", "5a", "5b", "6a", "6b", "7"]
-optExprList = ["1a"]
+optExprList = ["7"]
 
 #Parameter to determine number of instances of each scenario to run
 #optNumInstances = 10
@@ -99,10 +99,6 @@ def startLogger(timeStamp):
 	logger.info('Starting Regression Test')
 
 
-
-def getRunDir(runAttr, task):
-	return "exp"+runAttr["Experiment"]+"-"+runAttr["Platform"]+"-x"+runAttr["xvalLabel"]+"-"+task+"-i"+runAttr["Instance"]
-
 def obtainNetworkTopologyAttributes(runAttr):
 	physicalSchemaName = runAttr['PhysicalSchema']
 
@@ -142,9 +138,6 @@ def generateAvroraLogfileName(runAttr):
 
 
 
-def getRunOutputDir(runAttr, rootOutputDir, task):
-	return "exp"+runAttr["Experiment"]+"-"+runAttr["Platform"]+"-x"+runAttr["xvalLabel"]+"-"+task+"-"+str(runAttr["Instance"])
-
 def runExperiment(exprAttr, exprAttrCols, outputDir):
 	global optPlatList, optNumInstances
 
@@ -163,7 +156,7 @@ def runExperiment(exprAttr, exprAttrCols, outputDir):
 					exprAttr["Instance"] = instance
 					print "\n**********Experiment="+exprAttr['Experiment']+" Platform="+plat+" task="+task+" x="+xVal + " xLabel="+xValLabel+" instance="+str(exprAttr["Instance"])	
 					runAttr = initRunAttr(exprAttr, xVal, xValLabel, xValAttr, instance, plat, task)
-					runOutputDir = getRunOutputDir(runAttr, avroraJobsRootDir, task)
+					runOutputDir = SBLib.getRunOutputDir(runAttr)
 
 					if (plat == "INSNEE"):
 						SNEEMediator.generateAvroraJob(task,xVal,xValLabel,xValAttr,instance,runAttr,runAttrCols,outputDir, runOutputDir, avroraJobsRootDir)
@@ -187,7 +180,7 @@ def runExperiment(exprAttr, exprAttrCols, outputDir):
 					#3 Log the (partial) results
 					SBLib.logResultsToFiles(runAttr, runAttrCols, optOutputDir)
 					
-					sys.exit(0)
+				sys.exit(0)
 
 				
 def runExperiments(timeStamp, outputDir):

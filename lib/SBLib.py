@@ -21,3 +21,7 @@ def logResultsToFiles(runAttr, runAttrCols, outputDir):
 	logResultsToFile(runAttr, runAttrCols, resultsFileName)
 
 
+def getRunOutputDir(runAttr):
+	return "exp"+runAttr["Experiment"]+"-"+runAttr["Platform"]+"-x"+runAttr["xvalLabel"]+"-"+runAttr["Task"]+"-"+str(runAttr["Instance"])
+
+

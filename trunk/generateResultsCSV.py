@@ -53,7 +53,7 @@ def processCondorResults():
 			avroraLogFile = runDirName + os.sep + "out.txt"
 
 			#find output file and process
-			getAvroraEnergyValues(avroraLogFile, runAttr)
+			SBLib.getAvroraEnergyValues(avroraLogFile, runAttr)
 
 		#Recreates the CSV, this time with the results from the Avrora simulation
 		SBLib.logResultsToFiles(runAttr, runAttrCols, optOutputDir)			

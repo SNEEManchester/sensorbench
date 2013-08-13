@@ -18,7 +18,7 @@ optPlatList = ["INSNEE"]
 #optExprList = ['0a', '0b', '0c', '0d', '0e']
 #optExprList = ['alphaCalib2']
 #optExprList = ["1a", "1b", "2a", "2b", "3a", "3b", "4a", "4b", "5a", "5b", "6a", "6b", "7"]
-optExprList = ["7"]
+optExprList = ["1a"]
 
 #Parameter to determine number of instances of each scenario to run
 #optNumInstances = 10
@@ -178,7 +178,7 @@ def runExperiment(exprAttr, exprAttrCols, outputDir):
 					#	runAvroraJob(runAttr, runAttrCols)
 
 					#3 Log the (partial) results
-					SBLib.logResultsToFiles(runAttr, runAttrCols, optOutputDir)
+					SBLib.logResultsToFiles(runAttr, runAttrCols, optOutputDir, "runs")
 					
 				sys.exit(0)
 

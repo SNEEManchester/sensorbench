@@ -17,8 +17,8 @@ optPlatList = ["INSNEE"]
 #Default list of experiments to be run
 #optExprList = ['0a', '0b', '0c', '0d', '0e']
 #optExprList = ['alphaCalib2']
-#optExprList = ["1a", "1b", "2a", "2b", "3a", "3b", "4a", "4b", "5a", "5b", "6a", "6b", "7"]
-optExprList = ["1a"]
+optExprList = ["1a", "1b", "2a", "2b", "3a", "3b", "4a", "4b", "5a", "5b", "6a", "6b", "7"]
+#optExprList = ["1a"]
 
 #Parameter to determine number of instances of each scenario to run
 #optNumInstances = 10
@@ -53,14 +53,19 @@ def parseArgs(args):
 		elif (o == "--num-instances"):
 			optNumInstances = int(a)	
 		elif (o == "--use-condor"):
-			optExprList = bool(a)
+			optUseCondor = bool(a)
 		else:
 			usage()
 			sys.exit(2)
 
 
 def usage():
-		print "runExp.py --scenario-dir=<dir> --outputdir=<dir> --plat=<MHOSC,INSNEE> exp==[1a,1b,2a,2b,3a,3b,4a,4b,5a,5b,6a,6b,7] --num-instances=<int> --use-condor=<bool>"
+		print "runExp.py --scenario-dir=<dir>\n\t\tdefault="+optScenarioDir
+		print "\t--outputdir=<dir>\n\t\tdefault="+optOutputDir
+		print "\t--plat=<MHOSC,INSNEE>\n\t\tdefault="+str(optPlatList)
+		print "\t--exp=[1a,1b,2a,2b,3a,3b,4a,4b,5a,5b,6a,6b,7]\n\t\tdefault="+str(optExprList)
+		print "\t--num-instances=<int>\n\t\tdefault="+str(optNumInstances)
+		print "\t--use-condor=<bool>\n\t\tdefault="+str(optUseCondor)
 
 
 #Ouput info message to screen and logger if applicable

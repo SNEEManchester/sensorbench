@@ -1,6 +1,6 @@
 #This library holds functions used by more than one sensebench script
 
-import os, CSVLib
+import os, CSVLib, AvroraLib
 
 #Logs the contents of RunAttr hash for single file
 def logResultsToFile(runAttr, runAttrCols, resultsFileName):

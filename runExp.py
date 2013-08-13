@@ -181,7 +181,6 @@ def runExperiment(exprAttr, exprAttrCols, outputDir):
 					#3 Log the (partial) results
 					SBLib.logResultsToFiles(runAttr, runAttrCols, optOutputDir, "runs")
 					
-				sys.exit(0)
 
 				
 def runExperiments(timeStamp, outputDir):
@@ -240,6 +239,8 @@ def main():
 	runExperiments(timeStamp, optOutputDir)
 
 	cleanup()
+
+	print "\nResults in directory:"+optOutputDir
 
 if __name__ == "__main__":
 	main()

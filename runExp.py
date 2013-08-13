@@ -60,7 +60,8 @@ def parseArgs(args):
 
 
 def usage():
-		print "generate-scenarios.py --scenario-dir=<dir> --num-instances=<int> --outputdir=<dir> --plat=<MHOSC,INSEE> exp==<> --use-condor=<bool>"
+		print "runExp.py --scenario-dir=<dir> --outputdir=<dir> --plat=<MHOSC,INSNEE> exp==[1a,1b,2a,2b,3a,3b,4a,4b,5a,5b,6a,6b,7] --num-instances=<int> --use-condor=<bool>"
+
 
 #Ouput info message to screen and logger if applicable
 def report(message):

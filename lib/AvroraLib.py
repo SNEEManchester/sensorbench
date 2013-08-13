@@ -466,7 +466,7 @@ def computeEnergyValues(dirName, simulationDuration, inputFile = "avrora-out.txt
 			if (maxEnergy < monitors[site].getTotalEnergyLessLeds()):
 				maxEnergy = monitors[site].getTotalEnergyLessLeds()
 			otherEnergy = otherEnergy + monitors[site].flash
-			siteLifetime = (energyStock / monitors[site].getTotalEnergyLessLeds()) * simulationDuration
+			siteLifetime = (energyStock / monitors[site].getTotalEnergyLessLeds()) * float(simulationDuration)
 		else:		
 			sumEnergy = sumEnergy + monitors[site].getTotalEnergy()
 			if (maxEnergy < monitors[site].getTotalEnergy()):

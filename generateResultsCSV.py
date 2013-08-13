@@ -1,13 +1,18 @@
-import os, sys, getopt, SBLib, CSVLib, AvroraLib
+#!/usr/bin/python
+import os, sys, getopt, SBLib, CSVLib, AvroraLib, SBLib
 
 #The directory that contains the directories produced by condor with results
 optCondorOutputDir = os.getenv("HOME") + os.sep + "condor_results_6aug2013"
 
+#This is the directry where the results CSV files will end up
+optOutputDir = os.getcwd()
+
+
 def parseArgs(args):
-	global optCondorOutputDir, optRunDataCSV
+	global optCondorOutputDir, optOutputDir
 
 	try:
-		optNames = ["condor-output-dir="]
+		optNames = ["condor-output-dir=", "output-dir="]
 		opts, args = getopt.getopt(args, "h", optNames)
 	except getopt.GetoptError, err:
 		print str(err)
@@ -17,30 +22,16 @@ def parseArgs(args):
 	for o, a in opts:
 		if (o == "--condor-output-dir"):
 			optCondorOutputDir = a
+		elif (o == "--outputDir"):
+			optOutputDir = a
 
 
-
-def parseEnergyMonitorOutput(avroraLogFile, runAttr):
-
-	simulationDuration = runAttr["SimulationDuration"]
-	(sumEnergy, maxEnergy, averageEnergy, radioEnergy, cpu_cycleEnergy, sensorEnergy, otherEnergy, networkLifetime) = AvroraLib.computeEnergyValues(".", simulationDuration, avroraLogFile, ignoreLedEnergy = True, defaultSiteEnergyStock = 31320, siteLifetimeRankFile = None, sink = 0, ignoreList = [])
-	#All node energy in Joules for simulation duration
-	runAttr["Sum Energy"] = sumEnergy
-        #All node energy in Joules scaled to 6 month period
-	runAttr["Sum Energy 6M"] = sumEnergy*((60.0*60.0*24.0*30.0*6.0)/float(simulationDuration))
-	runAttr["Max Energy"] = maxEnergy
-	runAttr["Average Energy"] = averageEnergy
-	runAttr["CPU Energy"] = cpu_cycleEnergy
-	runAttr["Sensor Energy"] = sensorEnergy
-	runAttr["Other Energy"] = otherEnergy
-	runAttr["Network Lifetime secs"] = networkLifetime
-	runAttr["Network Lifetime days"] = float(networkLifetime)/60.0/60.0/24.0
-
-
+def usage():
+	print "generateResultsCSV.py --condor-output-dir=<dir> --output-dir=<dir>"
 
 
 def processCondorResults():
-	global optCondorOutputDir
+	global optCondorOutputDir, optOutputDir
 
 	resultsDir = optCondorOutputDir
 	os.chdir(resultsDir)
@@ -61,17 +52,15 @@ def processCondorResults():
 			print runDirName
 			avroraLogFile = runDirName + os.sep + "out.txt"
 
-			#TODO: find output file and process
-			#parseEnergyMonitorOutput(avroraLogFile, runAttr)
+			#find output file and process
+			getAvroraEnergyValues(avroraLogFile, runAttr)
 
-		#SBLib.logResultsToFiles(runAttr, runAttrCols, outputDir)			
+		#Recreates the CSV, this time with the results from the Avrora simulation
+		SBLib.logResultsToFiles(runAttr, runAttrCols, optOutputDir)			
 
 
 def main():
 	global optCondorOutputDir
-
-	#Reread CSV produced from runExperiments
-
 
 	#parse the command-line arguments
 	parseArgs(sys.argv[1:]) 

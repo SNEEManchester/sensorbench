@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import os, sys, getopt, SBLib, CSVLib, AvroraLib, SBLib
+import os, sys, getopt, SBLib, CSVLib, SBLib
 
 #The directory that contains the directories produced by condor with results
 optCondorOutputDir = os.getenv("HOME") + os.sep + "condor_results_6aug2013"

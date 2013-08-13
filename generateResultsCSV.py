@@ -38,7 +38,7 @@ def processCondorResults():
 
 	first = True 
 	#TODO: We need all-results.csv copied into condor output folder
-	for line in open("all-results.csv", 'r'):
+	for line in open("all-runs.csv", 'r'):
 		if first:
 			runAttrCols = CSVLib.colNameList(line)
 			first = False
@@ -56,7 +56,7 @@ def processCondorResults():
 			SBLib.getAvroraEnergyValues(avroraLogFile, runAttr)
 
 		#Recreates the CSV, this time with the results from the Avrora simulation
-		SBLib.logResultsToFiles(runAttr, runAttrCols, optOutputDir)			
+		SBLib.logResultsToFiles(runAttr, runAttrCols, optOutputDir, "results")			
 
 
 def main():

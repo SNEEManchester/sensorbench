@@ -14,12 +14,12 @@ def logResultsToFile(runAttr, runAttrCols, resultsFileName):
 
 
 #Logs the contents of RunAttr hash (one global file, one per experiment/platform)
-def logResultsToFiles(runAttr, runAttrCols, outputDir):
+def logResultsToFiles(runAttr, runAttrCols, outputDir, label):
 	#Per-experiment/plaftform results file
-	resultsFileName = outputDir+os.sep+"exp"+runAttr["Experiment"]+"-"+runAttr["Platform"]+"-results.csv"
+	resultsFileName = outputDir+os.sep+"exp"+runAttr["Experiment"]+"-"+runAttr["Platform"]+"-"+label+".csv"
 	logResultsToFile(runAttr, runAttrCols, resultsFileName)
 	#All experiments results file
-	resultsFileName = outputDir+os.sep+"all-results.csv"
+	resultsFileName = outputDir+os.sep+"all-"+label+".csv"
 	logResultsToFile(runAttr, runAttrCols, resultsFileName)
 
 

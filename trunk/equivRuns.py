@@ -1,5 +1,7 @@
 import os, CSVLib
 
+###THIS SCRIPT IS CURRENTLY NOT USED
+
 #For MHOSC, any tasks that are not 'raw' are safely ignored!
 dict = {}
 

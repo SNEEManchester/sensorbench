@@ -2,7 +2,7 @@
 
 import re, getopt, logging, sys, os, string, UtilLib, CSVLib, AvroraLib, networkLib, shutil, SBLib
 import SNEEMediator
-import parseAcquireDeliverTimes, equivRuns #TODO: Move these to where they are needed
+#import equivRuns #TODO: Incorporate when needed
 
 #Directory to read the scenario files from
 optScenarioDir = os.getcwd() + os.sep + "scenarios"
@@ -148,7 +148,7 @@ def runExperiment(exprAttr, exprAttrCols, outputDir):
 	global optPlatList, optNumInstances
 
 	print "runExperiments"
-	runAttrCols = exprAttrCols + ["BufferingFactor", "Platform", "Task", "xvalLabel", "Instance", "ExitCode", "NetworkSize", "Layout", "NetworkDensity","NetworkPercentSources", "SimulationDuration", "Tuple Acq Count", "Tuple Del Count", "Tuple Delta Sum", "Data Freshness", "Output Rate", "Delivery Rate", "Sum Energy", "Sum Energy 6M", "Max Energy", "Average Energy", "CPU Energy", "Sensor Energy", "Other Energy", "Network Lifetime secs", "Network Lifetime days", "Comments"]
+	runAttrCols = exprAttrCols + ["AcquisitionRate", "BufferingFactor", "Platform", "Task", "xvalLabel", "Instance", "ExitCode", "PhysicalSchema", "NetworkSize", "Layout", "NetworkDensity","NetworkPercentSources", "SimulationDuration", "Tuple Acq Count", "Tuple Del Count", "Tuple Delta Sum", "Data Freshness", "Output Rate", "Delivery Rate", "Sum Energy", "Sum Energy 6M", "Max Energy", "Average Energy", "CPU Energy", "Sensor Energy", "Other Energy", "Network Lifetime secs", "Network Lifetime days", "Comments"]
 
 	tasks = exprAttr["Tasks"].split(";")
 	xValAttr = exprAttr["XvalAttr"]

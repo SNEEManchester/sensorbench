@@ -1,5 +1,6 @@
 #!/usr/bin/python
 import os, sys, getopt, SBLib, CSVLib, SBLib
+import parseAcquireDeliverTimes
 
 #The directory that contains the directories produced by condor with results
 optCondorOutputDir = os.getenv("HOME") + os.sep + "condor_results_6aug2013"
@@ -54,6 +55,7 @@ def processCondorResults():
 
 			#find output file and process
 			SBLib.getAvroraEnergyValues(avroraLogFile, runAttr)
+			parseAcquireDeliverTimes.parse(avroraLogFile, runAttr, False)
 
 		#Recreates the CSV, this time with the results from the Avrora simulation
 		SBLib.logResultsToFiles(runAttr, runAttrCols, optOutputDir, "results")			

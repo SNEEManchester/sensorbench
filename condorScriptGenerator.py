@@ -1,14 +1,15 @@
 #!/usr/bin/python
-import re, os, sys, networkLib, math, getopt, UtilLib, CSVLib, shutil
+import re, os, sys, math, getopt, shutil, UtilLib, tarfile
 
-optCondorDir = "condor"
-optBinaryDir = "avroraJobsTar"
+optMainDir = ""
+condorDir = "SenseBenchcondor"
+optBinaryDir = "avroraJobs"
 pathSeperator = os.sep
 
 def parseArgs(args):	
-	global optScenarioDir
+	global optScenarioDir, optMainDir
 	try:
-		optNames = ["condor-dir=", "num-instances=", "binary-dir="]
+		optNames = ["binary-dir=", "main-dir="]
 	
 		#append the result of getOpNames to all the libraries 
 		optNames = UtilLib.removeDuplicates(optNames)
@@ -20,19 +21,17 @@ def parseArgs(args):
 		sys.exit(2)
 			
 	for o, a in opts:
-		if (o == "--condor-dir"):
-			optCondorDir = a
-		elif (o == "--num-instances"):
-			optNumInstances = int(a)
-		elif (o == "--binary-dir"):
+		if (o == "--binary-dir"):
 			optBinaryDir = a
+		elif (o == "--main-dir"):
+			optMainDir = a
 		else:
 			usage()
 			sys.exit(2)
 
 
 def usage():
-	print "generate-scenarios.py --condor-dir=<dir> --num-instances=<int> --binary-dir=<dir>"
+	print "generate-scenarios.py --binary-dir=<dir> --main-dir=<dir>"
 
 
 def check_dir(d):
@@ -40,8 +39,8 @@ def check_dir(d):
 		os.makedirs(d)
 
 def generateTopBlurb():
-	check_dir(optCondorDir)
-	condorFile = open(optCondorDir + pathSeperator + "submit.txt", "w") 
+	check_dir(condorDir)
+	condorFile = open(condorDir + pathSeperator + "submit.txt", "w") 
 	condorFile.write("universe = vanilla \n executable = start.sh \n when_to_transfer_output = ON_EXIT \n Should_Transfer_Files = YES \n \n Requirements = (HAS_STANDARD_IMAGE =?= True) \n Request_Disk = 204800 \n request_memory = 512 \n #Output = output$(Process).txt \n #Error = error$(Process).txt \n log = log.txt \n Output = out.txt \n Error = err.txt \n notification = error \n\n\n")
 
 def getRunOutputDir(runAttr, task):
@@ -79,12 +78,19 @@ def obtainNetworkTopologyAttributes(runAttr):
 		sys.exit(2)
 
 def condorLine(file):
-	file = file.split('.')[0]
 	binaryFolderName = optBinaryDir + pathSeperator + file
-	condorFile = open(optCondorDir + pathSeperator + "submit.txt", "a") 
+	condorFile = open(condorDir + pathSeperator + "submit.txt", "a") 
 	condorFile.write("transfer_input_files = ../avrora-1.7.113.jar,../jre.tar.gz,../%s.tar.gz \n" % (binaryFolderName))
 	condorFile.write("Arguments = %s.tar.gz %s \n	initialdir   = %s \n	queue \n\n" % (file, file, file))
-	check_dir(optCondorDir + pathSeperator + file)
+	check_dir("avroraJobsTar")
+	tarAndMove(file)
+
+def tarAndMove(file):
+	tar = tarfile.open("avroraJobsTar" +pathSeperator+ file+".tar.gz", "w:gz")
+	for name in os.listdir(optBinaryDir + pathSeperator+ file):
+		tar.add(optBinaryDir + pathSeperator+ file + pathSeperator + name)
+	tar.close()
+	check_dir(condorDir + pathSeperator + "avroraJobsTar")
 
 def generateScriptForEachJob():
 	fileList = os.listdir(optBinaryDir)
@@ -99,26 +105,30 @@ def generateScript():
 
 
 def moveCollections():
-	shutil.copyfile(optBinaryDir+".zip", optCondorDir + pathSeperator + optBinaryDir+".zip")
-	shutil.copyfile("avrora-1.7.113.jar", optCondorDir + pathSeperator + "avrora-1.7.113.jar")
-	shutil.copyfile("jre.tar.gz", optCondorDir + pathSeperator + "jre.tar.gz")
+	for name in os.listdir("avroraJobsTar"):
+		shutil.copyfile("avroraJobsTar"+ pathSeperator+ name, condorDir + pathSeperator + "avroraJobsTar"+ pathSeperator + name)
+	shutil.copyfile("avrora-1.7.113.jar", condorDir + pathSeperator + "avrora-1.7.113.jar")
+	shutil.copyfile("jre.tar.gz", condorDir + pathSeperator + "jre.tar.gz")
+	shutil.copyfile("SNEE-1.6.4-SENSEBENCH.zip", condorDir + pathSeperator + "SNEE-1.6.4-SENSEBENCH.zip")
+	shutil.copyfile("all-runs.csv", condorDir + pathSeperator + "all-runs.csv")
 
 
 
 def generateAvroraCode():
-	avroraCode = open(optCondorDir + pathSeperator + "start.sh", "w")
+	avroraCode = open(condorDir + pathSeperator + "start.sh", "w")
 	bineryZipFolder = optBinaryDir+".zip"
 	
 	avroraCode.write("#!/bin/bash \n echo $1 \n\n  unzip avrora-1.7.113.jar -d avrora \n rm avrora-1.7.113.jar \n mv jre.tar.gz avrora/jre.tar.gz \n mv %s avrora/%s \n cd  avrora \n tar -zxf jre.tar.gz \n rm jre.tar.gz \n unzip %s -d %s \n if \"$1\" == \"\" \n then exit(0) \N fi \n mv $1/* . \n rm %s \n rm -rf %s \n line=$(head -n 1 \"commandLine.txt\") \n	jre1.6.0_27/bin/java $line \n exit 0" %(bineryZipFolder, bineryZipFolder, bineryZipFolder, optBinaryDir, bineryZipFolder, optBinaryDir))
 
 def main(): 	
-	global optScenarioDir
+	global condorDir, optMainDir
 
   #parse the command-line arguments
 	parseArgs(sys.argv[1:]) 
+	condorDir = condorDir + optMainDir
 	generateScript()
 	generateAvroraCode()
-	#moveCollections()
+	moveCollections()
 
   
 

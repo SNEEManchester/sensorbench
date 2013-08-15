@@ -80,10 +80,9 @@ def obtainNetworkTopologyAttributes(runAttr):
 def condorLine(file):
 	binaryFolderName = optBinaryDir + pathSeperator + file
 	condorFile = open(condorDir + pathSeperator + "submit.txt", "a") 
-	condorFile.write("transfer_input_files = ../avrora-1.7.113.jar,../jre.tar.gz,../avroraJobsTar/%s.tar.gz \n" % (file))
+	condorFile.write("transfer_input_files = ../avrora-1.7.113.jar,../jre.tar.gz,../%s.tar.gz \n" % (binaryFolderName))
 	condorFile.write("Arguments = %s.tar.gz %s \n	initialdir   = %s \n	queue \n\n" % (file, file, file))
 	check_dir("avroraJobsTar")
-	check_dir(condorDir + pathSeperator + file)
 	tarAndMove(file)
 
 def tarAndMove(file):

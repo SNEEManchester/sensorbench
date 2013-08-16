@@ -146,12 +146,12 @@ def parse(avroraOutputFile, runAttr, deliverTupleAtATime):
 	if (delTupleCount>0):
 		runAttr["Data Freshness"] = tdelta_sum.seconds/delTupleCount #tuple delta avg	
 	else:
-		runAttr["Data Freshness"] = "No tuples delivered"
+		runAttr["Data Freshness"] = 0 # No tuples delivered
 	runAttr["Output Rate"] = float(delTupleCount)/float(simulationDuration) #tuples/s
 	if (acqTupleCount>0):
 		runAttr["Delivery Rate"] = float(delTupleCount)/float(acqTupleCount)
 	else:
-		runAttr["Delivery Rate"] = "No tuples acquired"
+		runAttr["Delivery Rate"] = 0 # No tuples acquired
 
 def testMHOSCFile():	
 	avroraOutputFile = "MHOSC-exp0a-x1-avrora-log.txt"

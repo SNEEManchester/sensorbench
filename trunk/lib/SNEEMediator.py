@@ -1,4 +1,4 @@
-import os, shutil, sys, re, string
+import os, shutil, sys, re, string, AvroraLib
 
 sneeRoot = os.getenv('SNEEROOT')
 
@@ -279,17 +279,11 @@ def getElfString(numNodes, avroraElfDir):
 			
 	return (string.join(elfs,' '),string.join(ones,","))
 
-def getSensorDataString(numNodes):
-	sensorData = []
-	for i in range(numNodes):
-		sensorData += ["light:"+str(i)+":."]
-	return string.join(sensorData,',')
-
-def getAvroraCommandString(runAttr, runAttrCols, avroraElfDir):
+def getAvroraCommandString(runAttr, avroraElfDir):
 	simDuration = int(runAttr["AcquisitionRate"])*runAttr["BufferingFactor"]
 	runAttr["SimulationDuration"] = simDuration
 
-	sensorDataString = getSensorDataString(runAttr['NetworkSize'])
+	sensorDataString = AvroraLib.getSensorDataString(runAttr['NetworkSize'])
 	(elfString, nodeCountString) = getElfString(runAttr['NetworkSize'], avroraElfDir)
 	#avroraLogFile = generateAvroraLogfileName(runAttr) #move this
 
@@ -340,7 +334,7 @@ def generateAvroraJob(task,xVal,xValLabel,xValAttr,instance,runAttr,runAttrCols,
 		shutil.copy(avroraTopFile, avroraJobDir)
 				    
 		#Create Avrora CommandString.txt
-		avroraCommandStr = getAvroraCommandString(runAttr, runAttrCols, avroraElfDir)
+		avroraCommandStr = getAvroraCommandString(runAttr, avroraElfDir)
 		avroraCommandStrFileName = avroraJobDir + os.sep + "avroraCommandString.txt"
 		avroraCommandStrFile = open(avroraCommandStrFileName, "w")
 		avroraCommandStrFile.writelines(avroraCommandStr)

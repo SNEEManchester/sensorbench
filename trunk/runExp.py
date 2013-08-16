@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import re, getopt, logging, sys, os, string, UtilLib, CSVLib, AvroraLib, networkLib, shutil, SBLib
-import SNEEMediator
+import SNEEMediator, MHOSCMediator
 #import equivRuns #TODO: Incorporate when needed
 
 #Directory to read the scenario files from
@@ -166,9 +166,8 @@ def runExperiment(exprAttr, exprAttrCols, outputDir):
 
 					if (plat == "INSNEE"):
 						SNEEMediator.generateAvroraJob(task,xVal,xValLabel,xValAttr,instance,runAttr,runAttrCols,outputDir, runOutputDir, avroraJobsRootDir)
-					#TODO: MHOSC
-					#elif (plat == "MHOSC"):
-					#	MHOSCMediator.generateAvroraJob(task,xVals,xValLabels,xValAttr,instance,runAttr,runAttrCols,outputDir, runOutputDir)
+					elif (plat == "MHOSC"):
+						MHOSCMediator.generateAvroraJob(task,xVal,xValLabel,xValAttr,instance,runAttr,runAttrCols,outputDir, runOutputDir, avroraJobsRootDir)
 					#TODO: OD
 					#elif (plat == "OD"):
 					#	ODMediator.generateAvroraJob(task,xVals,xValLabels,xValAttr,instance,runAttr,runAttrCols,outputDir, runOutputDir)
@@ -220,7 +219,8 @@ def init(timeStamp):
 		print "Scenarios directory %s not found" % (optScenarioDir)
 		sys.exit(2)
 	#will need to call init method for all platforms
-	SNEEMediator.init(optScenarioDir)	
+	SNEEMediator.init(optScenarioDir)
+	MHOSCMediator.init(optScenarioDir)
 
 	optOutputDir += os.sep+timeStamp
 
@@ -229,6 +229,7 @@ def init(timeStamp):
 
 def cleanup():
 	SNEEMediator.cleanup(optScenarioDir)
+	MHOSCMediator.cleanup()
 
 
 def main(): 	

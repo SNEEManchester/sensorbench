@@ -21,7 +21,7 @@ def doComputeStats(id,n,m,aqRate,bufferingFactor, acqTupleCount, delTupleCount, 
 			#needed for cases of duplicate tuples, when first set are not delivered,
 			#then second set when delivered seem to take a really long time!
 			#TODO: Think about threshold!!
-			if tdelta.seconds > ((aqRate)*(bufferingFactor)+1):
+			if tdelta.seconds > (int(aqRate)*int(bufferingFactor)+1):
 				print "doh "+str(tdelta.seconds)
 				return (acqTupleCount, delTupleCount)
 

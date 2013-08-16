@@ -10,7 +10,7 @@ set style data linespoints
 set pointsize 1.5
 set xlabel "Network Size"
 set ylabel "Lifetime (days)"
-set key center right
+set key bottom right
 set style histogram cluster gap 1
 set style fill pattern border -1
 set boxwidth 0.9 absolute

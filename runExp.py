@@ -220,7 +220,7 @@ def init(timeStamp):
 		sys.exit(2)
 	#will need to call init method for all platforms
 	SNEEMediator.init(optScenarioDir)
-	MHOSCMediator.init(optScenarioDir)
+	MHOSCMediator.init(optScenarioDir, os.getcwd()+os.sep+"MHOSC"+os.sep+"elf")
 
 	optOutputDir += os.sep+timeStamp
 

@@ -500,3 +500,11 @@ def getNumNodes(networkFilePath):
 			numNodes = numNodes + 1
 	
 	return numNodes
+
+
+def getSensorDataString(numNodes):
+	sensorData = []
+	for i in range(numNodes):
+		sensorData += ["light:"+str(i)+":."]
+	return string.join(sensorData,',')
+

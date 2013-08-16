@@ -6,7 +6,7 @@ import parseAcquireDeliverTimes
 optCondorOutputDir = os.getenv("HOME") + os.sep + "condor_results_6aug2013"
 
 #This is the directry where the results CSV files will end up
-optOutputDir = os.getcwd()
+optOutputDir = os.getcwd() + os.sep + "graphs"
 
 
 def parseArgs(args):

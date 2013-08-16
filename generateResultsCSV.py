@@ -6,7 +6,7 @@ import parseAcquireDeliverTimes
 optCondorOutputDir = os.getenv("HOME") + os.sep + "condor_results_6aug2013"
 
 #This is the directry where the results CSV files will end up
-optOutputDir = os.getcwd() + os.sep + "graphs"
+optOutputDir = os.getcwd() + os.sep + "graphs" + os.sep + "csv"
 
 
 def parseArgs(args):
@@ -29,6 +29,13 @@ def parseArgs(args):
 
 def usage():
 	print "generateResultsCSV.py --condor-output-dir=<dir> --output-dir=<dir>"
+
+
+def checkFilesDontExist():
+	if (os.path.exists(optOutputDir+os.sep+"all-results-raw.csv") or os.path.exists(optOutputDir+os.sep+"all-results-avg.csv")):
+		print "One or more output files already exist.  Please move or delete them and then rerun this script."
+		sys.exit(2)
+
 
 #Generates one line per scenario instance in the CSV file 
 def generatePerRunResults():
@@ -124,6 +131,7 @@ def generateAggregatedResults():
 
 
 def processCondorResults():
+	checkFilesDontExist()
 	generatePerRunResults()
 	generateAggregatedResults()
 

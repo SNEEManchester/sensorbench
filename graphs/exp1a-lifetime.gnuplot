@@ -20,7 +20,7 @@ set datafile missing '?'
 set datafile separator ","
 
 #MHOSC
-plot 'exp1a-INSNEE-results.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'raw'? column(LIFETIME_COL):1/0) title 'SNEE raw', \
-     'exp1a-INSNEE-results.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'aggr'? column(LIFETIME_COL):1/0) title 'SNEE aggr', \
-     'exp1a-MHOSC-results.csv' using XVAL_COL:LIFETIME_COL title 'MHOSC'
+plot 'exp1a-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'raw'? column(LIFETIME_COL):1/0) title 'SNEE raw', \
+     'exp1a-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'aggr'? column(LIFETIME_COL):1/0) title 'SNEE aggr', \
+     'exp1a-MHOSC-results-avg.csv' using XVAL_COL:LIFETIME_COL title 'MHOSC'
 

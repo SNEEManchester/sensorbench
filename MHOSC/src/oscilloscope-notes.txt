@@ -1,0 +1,53 @@
+** Oscilloscope uses Bastation app, MultihopOscilloscope doesn't! CHECK
+
+SENSORBOARD=mts300 make micaz
+cp ./build/micaz/main.exe mhosc-a2-b5.elf
+avr-objdump -zhD ./build/micaz/main.exe > main.od
+
+MHOP OSCILLOSCOPE
+=================
+
+java avrora.Main -mcu=mts300 -platform=micaz -simulation=sensor-network -seconds=10 -monitors=leds,packet,serial,energy,c-print -ports=0:0:2390 -random-seed=1 -sensor-data=light:1:.,light:2:.,light:3:.,light:4:.,light:5:.,light:6:.,light:7:.,light:8:.,light:9:.,light:10:.,light:11:.,light:12:.,light:13:.,light:14:.,light:15:.,light:16:.,light:17:.,light:18:.,light:19:.,light:20:.,light:21:.,light:22:.,light:23:.,light:24:.,light:25:. -report-seconds -nodecount=25  mhosc_1024_5_cprint.elf > mhosc_1024_5_cprintstr_example-output_no-top.txt
+
+java avrora.Main -mcu=mts300 -platform=micaz -simulation=sensor-network -topology=static -topology-file=n_n30_r1_7.top -seconds=200 -monitors=leds,packet,serial,energy,c-print -ports=0:0:2390 -random-seed=1 -sensor-data=light:1:.,light:2:.,light:3:.,light:4:.,light:5:.,light:6:.,light:7:.,light:8:.,light:9:.,light:10:.,light:11:.,light:12:.,light:13:.,light:14:.,light:15:.,light:16:.,light:17:.,light:18:.,light:19:.,light:20:.,light:21:.,light:22:.,light:23:.,light:24:.,light:25:. -report-seconds -nodecount=25  mhos_1024_5_cprintstr.elf
+
+produces two types of serial port messages
+(1) 00 FF FF 00 00 09 00 72 21 00 0A 00 17 00 01 00 F6
+(2) 00 FF FF 00 00 12 00 93 00 00 01 00 00 09 00 0D 02 D0 01 50 02 B3 03 B5 00 9F 
+(1) is prob from collection tree protocol, should be ignored. (2) seem to be the messages with sensor readings.
+bf=10 doesn't seem to work, using bf=5 (default for mhop oscilloscope)
+
+OSCILLOSCOPE
+============
+
+java avrora.Main -mcu=mts300 -platform=micaz -simulation=sensor-network -topology=static -topology-file=n_n30_r1_7.top -seconds=20 -monitors=leds,packet,serial,energy,c-print -ports=0:0:2390 -random-seed=1 -sensor-data=light:1:.,light:2:.,light:3:.,light:4:.,light:5:.,light:6:.,light:7:.,light:8:.,light:9:.,light:10:.,light:11:.,light:12:.,light:13:.,light:14:.,light:15:.,light:16:.,light:17:.,light:18:.,light:19:.,light:20:.,light:21:.,light:22:.,light:23:.,light:24:.,light:25:. -report-seconds -nodecount=1,1  bs_mz.elf osc_256_10_cprint_mz.elf
+
+java avrora.Main -mcu=mts300 -platform=micaz -simulation=sensor-network -seconds=20 -monitors=leds,packet,serial,energy,c-print -ports=0:0:2390 -random-seed=1 -sensor-data=light:1:.,light:2:.,light:3:.,light:4:.,light:5:.,light:6:.,light:7:.,light:8:.,light:9:.,light:10:.,light:11:.,light:12:.,light:13:.,light:14:.,light:15:.,light:16:.,light:17:.,light:18:.,light:19:.,light:20:.,light:21:.,light:22:.,light:23:.,light:24:.,light:25:. -report-seconds -nodecount=1,1  bs_mz.elf osc_256_10_cprint_mz.elf
+
+
+
+----Works without option: real-time? YES
+
+
+java avrora.Main -mcu=mts300 -platform=micaz -simulation=sensor-network -colors=false -seconds=20 -monitors=leds,packet,serial -ports=0:0:2390 -random-seed=1 -sensor-data=light:1:. -report-seconds -nodecount=1,1 bs_mz.od osc_mz.od 
+
+separate window: 
+java net.tinyos.tools.Listen
+
+**DOES NOT SEEM TO WORK, MAYBE Basestation app changes the tuple type?
+To view tuples:
+mig java -target=micaz -java-classname=OscilloscopeMessage MultihopOscilloscope.h oscilloscope -o OscilloscopeMessage.java
+javac OscilloscopeMessage.java
+java net.tinyos.tools.MsgReader -comm network@127.0.0.1:2390 OscilloscopeMessage
+
+
+**Try to display data on Oscilloscope GUI
+*** java avrora.Main -mcu=mts300 -platform=micaz -simulation=sensor-network  -colors=false -topology=static -topology-file=n_n30_r1_7.top -seconds=2000 -monitors=leds,packet,serial,energy,real-time -ports=0:0:2390 -random-seed=1 -report-seconds -nodecount=1,4  bs_mz.od mhosc_256_10_mz.od
+
+*** java net.tinyos.sf.SerialForwarder -commetwork@127.0.0.1:2390
+
+In java dir:
+*** export MOTECOM=network@127.0.0.1:9002
+*** ./run
+
+

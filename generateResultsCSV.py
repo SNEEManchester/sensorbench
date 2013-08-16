@@ -54,7 +54,7 @@ def generatePerRunResults():
 
 			#find output file and process
 			SBLib.getAvroraEnergyValues(avroraLogFile, runAttr)
-			parseAcquireDeliverTimes.parse(avroraLogFile, runAttr, False)
+			parseAcquireDeliverTimes.parse(avroraLogFile, runAttr, True)
 
 		#Recreates the CSV, this time with the results from the Avrora simulation
 		SBLib.logResultsToFiles(runAttr, runAttrCols, optOutputDir, "results-raw")			

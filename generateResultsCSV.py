@@ -30,15 +30,14 @@ def parseArgs(args):
 def usage():
 	print "generateResultsCSV.py --condor-output-dir=<dir> --output-dir=<dir>"
 
-
-def processCondorResults():
+#Generates one line per scenario instance in the CSV file 
+def generatePerRunResults():
 	global optCondorOutputDir, optOutputDir
 
 	resultsDir = optCondorOutputDir
 	os.chdir(resultsDir)
 
-	first = True 
-	#TODO: We need all-results.csv copied into condor output folder
+	first = True
 	for line in open("all-runs.csv", 'r'):
 		if first:
 			runAttrCols = CSVLib.colNameList(line)
@@ -58,7 +57,75 @@ def processCondorResults():
 			parseAcquireDeliverTimes.parse(avroraLogFile, runAttr, False)
 
 		#Recreates the CSV, this time with the results from the Avrora simulation
-		SBLib.logResultsToFiles(runAttr, runAttrCols, optOutputDir, "results")			
+		SBLib.logResultsToFiles(runAttr, runAttrCols, optOutputDir, "results-raw")			
+
+
+#Generates one line per scenario in the CSV file (aggregates the instances)
+def generateAggregatedResults():
+	global optOuputDir
+	os.chdir(optOutputDir)
+
+	first = True
+	#The "averageable" attributes
+	avgAttrList = ['Tuple Acq Count', 'Tuple Del Count', 'Tuple Delta Sum',	'Data Freshness', 'Output Rate', 'Delivery Rate', 'Sum Energy', 'Sum Energy 6M', 'Max Energy', 'Average Energy', 'CPU Energy', 'Sensor Energy', 'Other Energy', 'Network Lifetime secs', 'Network Lifetime days']
+
+	#Used for computing average values for attributes
+	cumSumAttr = None
+	counter = 0
+	#Used to keep track of which instances belong to the same scenario
+	prevX = None
+	currentX = None
+
+	for line in open("all-results-raw.csv", 'r'):
+		#Header line in file
+		if first:
+			runAttrCols = CSVLib.colNameList(line)
+			first = False
+			continue
+
+		#Non-header lines in the file
+		runAttr = CSVLib.line2Dict(line, runAttrCols)
+		if runAttr.has_key('xvalLabel'):
+			currentX = runAttr["xvalLabel"]
+		else:
+			break;
+
+		if (cumSumAttr == None): #First instance of the file
+			#Reset cumulative sum/counter
+			cumSumAttr = runAttr
+			counter += 1
+			prevX = currentX
+			continue
+		if (currentX == prevX):
+			#Add averageable attributes from current runAttr to cumSumAttr
+			for attr in avgAttrList:
+				cumSumAttr[attr] = float(cumSumAttr[attr]) + float(runAttr[attr])
+			counter += 1
+			continue
+		else:
+			#Calculate average
+			for attr in avgAttrList:
+				cumSumAttr[attr] = float(cumSumAttr[attr]) / float(counter)
+			#Write to file
+			SBLib.logResultsToFiles(cumSumAttr, runAttrCols, optOutputDir, "results-avg")
+			#Reset cumulative sum/counter
+			cumSumAttr = runAttr
+			counter = 1
+			prevX = currentX
+			continue
+
+	#At the end of file
+	#Calculate average
+	if (counter > 0):
+		for attr in avgAttrList:
+			cumSumAttr[attr] =  float(cumSumAttr[attr]) / float(counter)
+		#Write to file
+		SBLib.logResultsToFiles(cumSumAttr, runAttrCols, optOutputDir, "results-avg")
+
+
+def processCondorResults():
+	generatePerRunResults()
+	generateAggregatedResults()
 
 
 def main():

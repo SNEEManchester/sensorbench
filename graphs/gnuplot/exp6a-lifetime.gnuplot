@@ -1,8 +1,7 @@
-
-load 'init.gnuplot'
+load 'gnuplot/init.gnuplot'
 
 set terminal pdf enhanced color
-set out 'exp6a-lifetime.pdf'
+set out PDF_DIR.'exp6a-lifetime.pdf'
 
 set auto x
 set auto y
@@ -20,7 +19,8 @@ set datafile missing '?'
 set datafile separator ","
 
 #MHOSC
-plot 'exp6a-INSNEE-results.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'raw'? column(LIFETIME_COL):1/0) title 'SNEE raw', \
-     'exp6a-INSNEE-results.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'aggr'? column(LIFETIME_COL):1/0) title 'SNEE aggr'
+plot CSV_DIR.'exp6a-INSNEE-results.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'raw'? column(LIFETIME_COL):1/0) title 'SNEE raw', \
+     CSV_DIR.'exp6a-INSNEE-results.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'aggr'? column(LIFETIME_COL):1/0) title 'SNEE aggr'
 #, \
-#     'exp6a-INSNEE-results.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'OD'? column(LIFETIME_COL):1/0) title 'SNEE OD'
+#     CSV_DIR.'exp6a-INSNEE-results.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'OD'? column(LIFETIME_COL):1/0) title 'SNEE OD'
+

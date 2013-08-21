@@ -1,8 +1,7 @@
-
-load 'init.gnuplot'
+load 'gnuplot/init.gnuplot'
 
 set terminal pdf enhanced color
-set out 'exp4a-output-rate.pdf'
+set out PDF_DIR.'exp4a-output-rate.pdf'
 
 set auto x
 set auto y
@@ -19,5 +18,6 @@ set xtics
 set datafile missing '?'
 set datafile separator ","
 
-plot 'exp4a-INSNEE-results.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'raw'? column(OUTPUT_RATE_COL):1/0) title 'SNEE raw', \
-     'exp4a-MHOSC-results.csv' using XVAL_COL:OUTPUT_RATE_COL title 'MHOSC'
+plot CSV_DIR.'exp4a-INSNEE-results.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'raw'? column(OUTPUT_RATE_COL):1/0) title 'SNEE raw', \
+     CSV_DIR.'exp4a-MHOSC-results.csv' using XVAL_COL:OUTPUT_RATE_COL title 'MHOSC'
+

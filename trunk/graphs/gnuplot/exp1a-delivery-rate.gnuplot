@@ -1,4 +1,3 @@
-
 load 'gnuplot/init.gnuplot'
 
 set terminal pdf enhanced color
@@ -22,6 +21,5 @@ set datafile separator ","
 plot CSV_DIR.'exp1a-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'raw'? column(DELIVERY_RATE_COL):1/0) title 'SNEE raw', \
      CSV_DIR.'exp1a-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'aggr'? column(DELIVERY_RATE_COL):1/0) title 'SNEE aggr', \
      CSV_DIR.'exp1a-MHOSC-results-avg.csv' using XVAL_COL:DELIVERY_RATE_COL title 'MHOSC'
-
 
 

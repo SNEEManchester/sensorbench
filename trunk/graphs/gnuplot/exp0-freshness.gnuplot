@@ -1,6 +1,7 @@
+load 'gnuplot/init.gnuplot'
 
 set terminal pdf enhanced color
-set out 'exp0-freshness.pdf'
+set out PDF_DIR.'exp0-freshness.pdf'
 
 set auto x
 set auto y
@@ -17,9 +18,9 @@ set xtics
 set datafile missing '?'
 set datafile separator ","
 
-plot 'exp0a-MHOSC-results.csv' using 12:21 title 'MHOSC', 'exp0b-INSNEE-results.csv' using 12:21 title 'SNEE', 'exp0a-INSNEE-results.csv' using 12:21 title 'SNEE*'
+plot CSV_DIR.'exp0a-MHOSC-results.csv' using 12:21 title 'MHOSC', CSV_DIR.'exp0b-INSNEE-results.csv' using 12:21 title 'SNEE', CSV_DIR.'exp0a-INSNEE-results.csv' using 12:21 title 'SNEE*'
 
 #set term png
 #set out 'exp0-freshness.png'
-#plot 'exp0a-MHOSC-results.csv' using 12:21 title 'MHOSC', 'exp0b-INSNEE-results.csv' using 12:21 title 'SNEE', 'exp0a-INSNEE-results.csv' using 12:21 title 'SNEE*'
+#plot CSV_DIR.'exp0a-MHOSC-results.csv' using 12:21 title 'MHOSC', CSV_DIR.'exp0b-INSNEE-results.csv' using 12:21 title 'SNEE', CSV_DIR.'exp0a-INSNEE-results.csv' using 12:21 title 'SNEE*'
 

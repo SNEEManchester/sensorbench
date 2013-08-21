@@ -1,8 +1,7 @@
-
-load 'init.gnuplot'
+load 'gnuplot/init.gnuplot'
 
 set terminal pdf enhanced color
-set out 'exp3a-freshness.pdf'
+set out PDF_DIR.'exp3a-freshness.pdf'
 
 set auto x
 set auto y
@@ -20,6 +19,6 @@ set datafile missing '?'
 set datafile separator ","
 
 #MHOSC
-plot 'exp3a-INSNEE-results.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'raw'? column(FRESHNESS_COL):1/0) title 'SNEE raw', \
-     'exp3a-INSNEE-results.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'corr1'? column(FRESHNESS_COL):1/0) title 'SNEE corr1', \
-     'exp3a-MHOSC-results.csv' using XVAL_COL:FRESHNESS_COL title 'MHOSC'
+plot CSV_DIR.'exp3a-INSNEE-results.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'raw'? column(FRESHNESS_COL):1/0) title 'SNEE raw', \
+     CSV_DIR.'exp3a-INSNEE-results.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'corr1'? column(FRESHNESS_COL):1/0) title 'SNEE corr1', \
+     CSV_DIR.'exp3a-MHOSC-results.csv' using XVAL_COL:FRESHNESS_COL title 'MHOSC'

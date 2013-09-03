@@ -37,11 +37,6 @@ def getAvroraCommandString(runAttr, runAttrCols, avroraElfDir):
 def generateAvroraJob(task,xVal,xValLabel,xValAttr,instance,runAttr,runAttrCols,rootOutputDir, runOutputDir, avroraJobsRootDir):
 	global optScenarioDir, optAvroraElfDir
 
-	#check if equiv experiment run exists
-	#if (runAttr['Experiment'],'INSNEE') in equivRuns.dict:
-	#equivRuns.copyExperimentRunResults(runAttr, rootOutputDir)
-	#else:
-
 	#3 Create AvroraJobs folder
 	#create dir for Avrora Job
 	avroraJobDir = avroraJobsRootDir+os.sep+runOutputDir 

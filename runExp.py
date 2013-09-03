@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
-import re, getopt, logging, sys, os, string, UtilLib, CSVLib, AvroraLib, networkLib, shutil, SBLib
-import SNEEMediator, MHOSCMediator
+import re, getopt, logging, sys, os, string, UtilLib, CSVLib, AvroraLib, networkLib, shutil
+import SNEEMediator, MHOSCMediator, SBLib, equivRuns
 #import equivRuns #TODO: Incorporate when needed
 
 #Directory to read the scenario files from
@@ -27,10 +27,13 @@ optNumInstances = 2
 #Flag to determine whether Avrora jobs will be executed via Condor parallel execution system
 optUseCondor = True
 
+#Flag to determine whether runs that are equivalent should be skipped
+optSkipEquivRuns = True
+
 def parseArgs(args):	
 	global optScenarioDir, optOutputDir, optPlatList, optExprList, optNumInstances, optUseCondor
 	try:
-		optNames = ["scenario-dir=", "outputdir=", "plat=", "exp=", "num-instances=", "use-condor="]
+		optNames = ["scenario-dir=", "outputdir=", "plat=", "exp=", "num-instances=", "use-condor=", "skip-equiv-runs="]
 	
 		#append the result of getOpNames to all the libraries 
 		optNames = UtilLib.removeDuplicates(optNames)
@@ -54,6 +57,8 @@ def parseArgs(args):
 			optNumInstances = int(a)	
 		elif (o == "--use-condor"):
 			optUseCondor = bool(a)
+		elif (o == "--skip-equiv-runs"):
+			optSkipEquivRuns = bool(a)
 		else:
 			usage()
 			sys.exit(2)
@@ -145,10 +150,10 @@ def generateAvroraLogfileName(runAttr):
 
 
 def runExperiment(exprAttr, exprAttrCols, outputDir):
-	global optPlatList, optNumInstances
+	global optPlatList, optNumInstances, optSkipEquivRuns
 
 	print "runExperiments"
-	runAttrCols = exprAttrCols + ["AcquisitionRate", "BufferingFactor", "Platform", "Task", "xvalLabel", "Instance", "ExitCode", "PhysicalSchema", "NetworkSize", "Layout", "NetworkDensity","NetworkPercentSources", "SimulationDuration", "Tuple Acq Count", "Tuple Del Count", "Tuple Delta Sum", "Data Freshness", "Output Rate", "Delivery Rate", "Sum Energy", "Sum Energy 6M", "Max Energy", "Average Energy", "CPU Energy", "Sensor Energy", "Other Energy", "Network Lifetime secs", "Network Lifetime days", "Comments"]
+	runAttrCols = exprAttrCols + ["AcquisitionRate", "BufferingFactor", "Platform", "Task", "xvalLabel", "Instance", "ExitCode", "PhysicalSchema", "NetworkSize", "Layout", "NetworkDensity","NetworkPercentSources", "SimulationDuration", "Tuple Acq Count", "Tuple Del Count", "Tuple Delta Sum", "Data Freshness", "Output Rate", "Delivery Rate", "Sum Energy", "Sum Energy 6M", "Max Energy", "Average Energy", "CPU Energy", "Sensor Energy", "Other Energy", "Network Lifetime secs", "Network Lifetime days", "Comments", "Equiv Run"]
 
 	tasks = exprAttr["Tasks"].split(";")
 	xValAttr = exprAttr["XvalAttr"]
@@ -163,6 +168,13 @@ def runExperiment(exprAttr, exprAttrCols, outputDir):
 					print "\n**********Experiment="+exprAttr['Experiment']+" Platform="+plat+" task="+task+" x="+xVal + " xLabel="+xValLabel+" instance="+str(exprAttr["Instance"])	
 					runAttr = initRunAttr(exprAttr, xVal, xValLabel, xValAttr, instance, plat, task)
 					runOutputDir = SBLib.getRunOutputDir(runAttr)
+					
+					#Does not create an Avrora Job if there is another run that produces
+					#equivalent results to this one
+					if ((runAttr['Experiment'],plat) in equivRuns.dict and optSkipEquivRuns):
+						runAttr['Equiv Run'] = equivRuns.dict[(runAttr['Experiment'],plat)]
+						SBLib.logResultsToFiles(runAttr, runAttrCols, optOutputDir, "runs")
+						continue
 
 					if (plat == "INSNEE"):
 						SNEEMediator.generateAvroraJob(task,xVal,xValLabel,xValAttr,instance,runAttr,runAttrCols,outputDir, runOutputDir, avroraJobsRootDir)

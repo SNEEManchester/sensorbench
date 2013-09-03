@@ -2,7 +2,6 @@
 
 import re, getopt, logging, sys, os, string, UtilLib, CSVLib, AvroraLib, networkLib, shutil
 import SNEEMediator, MHOSCMediator, SBLib, equivRuns
-#import equivRuns #TODO: Incorporate when needed
 
 #Directory to read the scenario files from
 optScenarioDir = os.getcwd() + os.sep + "scenarios"

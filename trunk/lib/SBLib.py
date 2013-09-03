@@ -28,6 +28,11 @@ def getRunOutputDir(runAttr):
 	return "exp"+runAttr["Experiment"]+"-"+runAttr["Platform"]+"-x"+runAttr["xvalLabel"]+"-"+runAttr["Task"]+"-"+str(runAttr["Instance"])
 
 
+#Returns dirname of equivalent run according to convention
+def getEquivRunOutputDir(runAttr):
+	return "exp"+runAttr["Equiv Run"]+"-"+runAttr["Platform"]+"-x"+runAttr["xvalLabel"]+"-"+runAttr["Task"]+"-"+str(runAttr["Instance"])
+
+
 #copies parsed values from Avrora simulation into runAttr hash table
 def getAvroraEnergyValues(avroraLogFile, runAttr):
 

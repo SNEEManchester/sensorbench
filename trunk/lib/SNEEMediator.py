@@ -299,11 +299,6 @@ def generateAvroraJob(task,xVal,xValLabel,xValAttr,instance,runAttr,runAttrCols,
 
 	runAttr["Query"] = tasks2queries[task]
 
-	#check if equiv experiment run exists
-	#if (runAttr['Experiment'],'INSNEE') in equivRuns.dict:
-	#equivRuns.copyExperimentRunResults(runAttr, rootOutputDir)
-	#else:
-
 	#1 Compile SNEEql query and compile the nesC to generate the Avrora binaries
 	compileQuery(runAttr)
 

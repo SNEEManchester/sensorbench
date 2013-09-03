@@ -1,36 +1,24 @@
 import os, CSVLib
 
-###THIS SCRIPT IS CURRENTLY NOT USED
-
 #For MHOSC, any tasks that are not 'raw' are safely ignored!
 dict = {}
 
-#dummy - for testing only
-#dict[('0b','INSNEE')] = ('0a','INSNEE')
+#INSNEE
+dict[('4b','INSNEE')] = '4a'
+dict[('5b','INSNEE')] = '5a'
+dict[('6b','INSNEE')] = '6a'
 
-dict[('0b','MHOSC')] = ('0a','MHOSC') #for the same xVal etc
-dict[('0c','MHOSC')] = ('0a','MHOSC')
-dict[('0d','MHOSC')] = ('0a','MHOSC') 
-dict[('0e','MHOSC')] = ('0a','MHOSC') 
-
-dict[('0c','INSNEE')] = ('0b','INSNEE')
-dict[('0d','INSNEE')] = ('0b','INSNEE') 
-dict[('0e','INSNEE')] = ('0b','INSNEE') 
-
-dict[('1b','MHOSC')] = ('1a','MHOSC')
-
-dict[('2b','MHOSC')] = ('2a','MHOSC')
-
-dict[('3b','MHOSC')] = ('3a','MHOSC')
-
-dict[('4b','MHOSC')] = ('4a','MHOSC')
-dict[('4b','INSNEE')] = ('4a','INSNEE')
-
-dict[('5b','MHOSC')] = ('5a','MHOSC')
-dict[('5b','INSNEE')] = ('5a','INSNEE')
-
-dict[('6b','MHOSC')] = ('6a','MHOSC')
-dict[('6b','INSNEE')] = ('6a','INSNEE')
+#MHOSC
+dict[('0b','MHOSC')] = '0a' #for the same xVal etc
+dict[('0c','MHOSC')] = '0a'
+dict[('0d','MHOSC')] = '0a'
+dict[('0e','MHOSC')] = '0a'
+dict[('1b','MHOSC')] = '1a'
+dict[('2b','MHOSC')] = '2a'
+dict[('3b','MHOSC')] = '3a'
+dict[('4b','MHOSC')] = '4a'
+dict[('5b','MHOSC')] = '5a'
+dict[('6b','MHOSC')] = '6a'
 
 
 def copyExperimentRunResults(runAttr, rootOutputDir):

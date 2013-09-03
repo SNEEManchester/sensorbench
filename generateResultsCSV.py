@@ -37,6 +37,18 @@ def checkFilesDontExist():
 		sys.exit(2)
 
 
+def parseRunResults(runAttr, runDirName):
+	global optCondorOutputDir
+	
+	#find folder with run results for current line in all-results.csv	
+	if (os.path.exists(optCondorOutputDir + os.sep + runDirName)):
+		print runDirName
+		avroraLogFile = runDirName + os.sep + "out.txt"
+		#find output file and process
+		SBLib.getAvroraEnergyValues(avroraLogFile, runAttr)
+		parseAcquireDeliverTimes.parse(avroraLogFile, runAttr, True)
+
+
 #Generates one line per scenario instance in the CSV file 
 def generatePerRunResults():
 	global optCondorOutputDir, optOutputDir
@@ -50,19 +62,14 @@ def generatePerRunResults():
 			runAttrCols = CSVLib.colNameList(line)
 			first = False
 			continue
-
+		print "*"
 		runAttr = CSVLib.line2Dict(line, runAttrCols)
 
-		#find folder with run results for current line in all-results.csv
 		runDirName = SBLib.getRunOutputDir(runAttr)
-		if (os.path.exists(optCondorOutputDir + os.sep + runDirName)):
-			print runDirName
-			avroraLogFile = runDirName + os.sep + "out.txt"
-
-			#find output file and process
-			SBLib.getAvroraEnergyValues(avroraLogFile, runAttr)
-			parseAcquireDeliverTimes.parse(avroraLogFile, runAttr, True)
-
+		if (not runAttr['Equiv Run']):
+			runDirName = SBLib.getEquivRunOutputDir(runAttr)
+		
+		parseRunResults(runAttr, runDirName)
 		#Recreates the CSV, this time with the results from the Avrora simulation
 		SBLib.logResultsToFiles(runAttr, runAttrCols, optOutputDir, "results-raw")			
 

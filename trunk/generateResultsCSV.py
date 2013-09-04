@@ -62,7 +62,6 @@ def generatePerRunResults():
 			runAttrCols = CSVLib.colNameList(line)
 			first = False
 			continue
-		print "*"
 		runAttr = CSVLib.line2Dict(line, runAttrCols)
 
 		runDirName = SBLib.getRunOutputDir(runAttr)
@@ -113,6 +112,7 @@ def generateAggregatedResults():
 		if (currentX == prevX):
 			#Add averageable attributes from current runAttr to cumSumAttr
 			for attr in avgAttrList:
+				print attr
 				cumSumAttr[attr] = float(cumSumAttr[attr]) + float(runAttr[attr])
 			counter += 1
 			continue

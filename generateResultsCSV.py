@@ -65,7 +65,7 @@ def generatePerRunResults():
 		runAttr = CSVLib.line2Dict(line, runAttrCols)
 
 		runDirName = SBLib.getRunOutputDir(runAttr)
-		if (not runAttr['Equiv Run']):
+		if (runAttr['Equiv Run']):
 			runDirName = SBLib.getEquivRunOutputDir(runAttr)
 		
 		parseRunResults(runAttr, runDirName)

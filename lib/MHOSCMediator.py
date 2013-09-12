@@ -30,7 +30,7 @@ def getAvroraCommandString(runAttr, runAttrCols, avroraElfDir):
 	nodeCountStr = runAttr['NetworkSize']
 	elfString = getMHOSCElfFilename(runAttr)
 
-	commandStr = "java avrora.Main -mcu=mts300 -platform=micaz -simulation=sensor-network -seconds=%d %s -monitors=leds,packet,energy,c-print -ports=0:0:2390 -random-seed=1 -sensor-data=%s -report-seconds -colors=false -nodecount=%d  %s" % (simDuration, topologyStr, sensorDataString, nodeCountStr, elfString)
+	commandStr = "avrora.Main -mcu=mts300 -platform=micaz -simulation=sensor-network -seconds=%d %s -monitors=leds,packet,energy,c-print -ports=0:0:2390 -random-seed=1 -sensor-data=%s -report-seconds -colors=false -nodecount=%d  %s" % (simDuration, topologyStr, sensorDataString, nodeCountStr, elfString)
 	return commandStr
 
 

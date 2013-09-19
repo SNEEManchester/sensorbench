@@ -40,46 +40,17 @@ def generateTopBlurb():
 	check_dir(condorDir)
 	condorFile = open(condorDir + pathSeperator + "submit.txt", "w") 
 	condorFile.write("universe = vanilla \n executable = start.sh \n when_to_transfer_output = ON_EXIT \n Should_Transfer_Files = YES \n \n Requirements = (HAS_STANDARD_IMAGE =?= True) \n Request_Disk = 204800 \n request_memory = 512 \n #Output = output$(Process).txt \n #Error = error$(Process).txt \n log = log.txt \n Output = out.txt \n Error = err.txt \n notification = error \n\n\n")
+	condorFile.close()
 
 def getRunOutputDir(runAttr, task):
 	return "exp"+runAttr["Experiment"]+"-"+runAttr["Platform"]+"-x"+runAttr["xvalLabel"]+"-"+task+"-"+str(runAttr["Instance"])
-
-def initRunAttr(exprAttr, x, xValLabel, xValAttr, instance, plat, task):
-	runAttr = exprAttr.copy()
-	runAttr["Platform"] = plat
-	#set fixed parameters for the experiments
-	runAttr["PhysicalSchema"] = runAttr["PhysicalSchemas"] 
-	runAttr["RadioLossRate"] = runAttr["RadioLossRates"]
-	runAttr["AcquisitionRate"] = runAttr["AcquisitionRates"]
-	#overwrite variable param
-	runAttr[xValAttr] = x
-	runAttr["xvalLabel"] = xValLabel
-	runAttr["Instance"] = instance
-	obtainNetworkTopologyAttributes(runAttr)
-	runAttr["Task"] = task
-	return runAttr
-
-def obtainNetworkTopologyAttributes(runAttr):
-	physicalSchemaName = runAttr['PhysicalSchema']
-
-        #get the network attributes from topology file name
-	m = re.search("n(\d+)_(linear|grid|random)_d(\d+)_s(\d+)", physicalSchemaName)
-	if (m != None):
-		runAttr['NetworkSize'] = int(m.group(1))
-		runAttr['Layout'] = m.group(2)
-		runAttr['NetworkDensity'] = int(m.group(3))
-		runAttr['NetworkPercentSources'] = int(m.group(4))
-		runAttr['PhysicalSchemaFilename'] = networkLib.getPhysicalSchemaFilename(runAttr['NetworkSize'],runAttr['Layout'],runAttr['NetworkDensity'],runAttr['NetworkPercentSources'],runAttr['Instance'])
-		(runAttr['SNEETopologyFilename'],runAttr['AvroraTopologyFilename']) = networkLib.getTopologyFilenames(runAttr['NetworkSize'],runAttr['Layout'],runAttr['NetworkDensity'],runAttr['Instance'])
-	else:
-		print "ERROR: physical schema filename %s does not conform to standard format" % (physicalSchemaName)
-		sys.exit(2)
 
 def condorLine(file):
 	binaryFolderName = optBinaryDir + pathSeperator + file
 	condorFile = open(condorDir + pathSeperator + "submit.txt", "a") 
 	condorFile.write("transfer_input_files = ../avrora-1.7.113.jar,../jre.tar.gz,../avroraJobsTar/%s.tar.gz \n" % (file))
 	condorFile.write("Arguments = %s.tar.gz %s \n	initialdir   = %s \n	queue \n\n" % (file, file, file))
+ 	condorFile.close()
 	check_dir("avroraJobsTar")
 	check_dir(condorDir + pathSeperator + file)
 	tarAndMove(file)
@@ -110,7 +81,6 @@ def moveCollections():
 		shutil.copyfile("avroraJobsTar"+ pathSeperator+ name, condorDir + pathSeperator + "avroraJobsTar"+ pathSeperator + name)
 	shutil.copyfile("avrora-1.7.113.jar", condorDir + pathSeperator + "avrora-1.7.113.jar")
 	shutil.copyfile("jre.tar.gz", condorDir + pathSeperator + "jre.tar.gz")
-	shutil.copyfile("SNEE-1.6.4-SENSEBENCH.zip", condorDir + pathSeperator + "SNEE-1.6.4-SENSEBENCH.zip")
 	shutil.copyfile(optMainDir + pathSeperator + "all-runs.csv", condorDir + pathSeperator + "all-runs.csv")
 
 

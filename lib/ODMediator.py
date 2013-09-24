@@ -1,4 +1,4 @@
-import os, shutil, sys, re, string, AvroraLib
+import os, shutil, sys, re, string, AvroraLib, SBLib
 
 OD_BETA = 1 #Outlier Detection Buffering factor
 
@@ -15,9 +15,7 @@ def cleanup():
 
 
 def getODElfFilename(runAttr):
-	a = runAttr['AcquisitionRate']
-	b = OD_BETA
-	return "od-a"+str(a)+"-b"+str(b)+".elf"
+  return SBLib.getRunOutputDir(runAttr)
 
 def getAvroraCommandString(runAttr, runAttrCols, avroraElfDir):
 	global OD_BETA
@@ -33,7 +31,7 @@ def getAvroraCommandString(runAttr, runAttrCols, avroraElfDir):
 	commandStr = "avrora.Main -mcu=mts300 -platform=micaz -simulation=sensor-network -seconds=100 -monitors=leds,packet,energy,c-print -colors=false -random-seed=1 -sensor-data="
 	numberOfNodesInDeployment = runAttr['NetworkSize']
 	for nodeid in range(1,numberOfNodesInDeployment):
-		if(nodeid = numberOfNodesInDeployment):
+		if(nodeid == numberOfNodesInDeployment):
 			commandStr = commandStr + "light:"+ str(nodeid) + ":temper" + str(nodeid) + ".txt"
 		else:
 			commandStr = commandStr + "light:"+ str(nodeid) + ":temper" + str(nodeid) + ".txt,"
@@ -41,9 +39,9 @@ def getAvroraCommandString(runAttr, runAttrCols, avroraElfDir):
 	commandStr = commandStr + " -report-seconds -nodecount="
 
 	for nodeid in range(0,numberOfNodesInDeployment):
-		if(nodeid = numberOfNodesInDeployment):
+		if(nodeid == numberOfNodesInDeployment):
 			commandStr = commandStr + "1 "
-		else
+		else:
 			commandStr = commandStr + "1,"
 
 	for nodeid in range(0,numberOfNodesInDeployment):
@@ -62,7 +60,8 @@ def generateAvroraJob(task,xVal,xValLabel,xValAttr,instance,runAttr,runAttrCols,
 	#Copy elf files to Avrora Job dir
 	if (os.path.exists(optAvroraElfDir)):
 		f = getODElfFilename(runAttr)
-		shutil.copy(optAvroraElfDir + os.sep + f, avroraJobDir)
+		for fileName in os.listdir(optAvroraElfDir + os.sep + "elfs" + os.sep + f):
+			shutil.copy(optAvroraElfDir + os.sep + "elfs" + os.sep + f + os.sep + fileName, avroraJobDir + os.sep + fileName)
 			    
 	#Create Avrora CommandString.txt
 	avroraCommandStr = getAvroraCommandString(runAttr, runAttrCols, optAvroraElfDir)

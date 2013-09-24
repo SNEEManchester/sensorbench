@@ -31,7 +31,7 @@ def getAvroraCommandString(runAttr, runAttrCols, avroraElfDir):
 	commandStr = "avrora.Main -mcu=mts300 -platform=micaz -simulation=sensor-network -seconds=100 -monitors=leds,packet,energy,c-print -colors=false -random-seed=1 -sensor-data="
 	numberOfNodesInDeployment = runAttr['NetworkSize']
 	for nodeid in range(1,numberOfNodesInDeployment):
-		if(nodeid == numberOfNodesInDeployment):
+		if(nodeid == numberOfNodesInDeployment -1):
 			commandStr = commandStr + "light:"+ str(nodeid) + ":temper" + str(nodeid) + ".txt"
 		else:
 			commandStr = commandStr + "light:"+ str(nodeid) + ":temper" + str(nodeid) + ".txt,"
@@ -39,13 +39,13 @@ def getAvroraCommandString(runAttr, runAttrCols, avroraElfDir):
 	commandStr = commandStr + " -report-seconds -nodecount="
 
 	for nodeid in range(0,numberOfNodesInDeployment):
-		if(nodeid == numberOfNodesInDeployment):
+		if(nodeid == numberOfNodesInDeployment -1):
 			commandStr = commandStr + "1 "
 		else:
 			commandStr = commandStr + "1,"
 
 	for nodeid in range(0,numberOfNodesInDeployment):
-		commandStr = commandStr + "mote" + str(nodeid) + ".elf"
+		commandStr = commandStr + "mote" + str(nodeid) + ".elf "
 	return commandStr
 
 

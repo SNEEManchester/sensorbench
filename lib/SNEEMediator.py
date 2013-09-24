@@ -1,6 +1,7 @@
 import os, shutil, sys, re, string, AvroraLib
 
 sneeRoot = os.getenv('SNEEROOT')
+optGenerateNesCBineries = True
 
 tasks2queries = {"raw" : "RSTREAM SELECT * FROM seaDefence[NOW];", \
 		 "aggr" : "RSTREAM SELECT AVG(seaLevel) FROM seaDefence[NOW];", \
@@ -9,10 +10,11 @@ tasks2queries = {"raw" : "RSTREAM SELECT * FROM seaDefence[NOW];", \
 		 "LR" : "RSTREAM SELECT * FROM seaDefence[NOW];", #TODO: provide correct query
 		 "OD" : "RSTREAM SELECT * FROM seaDefence[NOW];"} #TODO: provide correct query 
 
-def init(scenarioDir):
-	global sneeRoot, optScenarioDir
+def init(scenarioDir, generateNesCBineries):
+	global sneeRoot, optScenarioDir, optGenerateNesCBineries
 
 	optScenarioDir = scenarioDir
+	optGenerateNesCBineries = generateNesCBineries
 	
 	#copy scenarios to SNEE directory
 	#TODO: check whether top files are needed (prob not)
@@ -34,7 +36,7 @@ def getSneeRoot():
 	return sneeRoot
 
 def createSNEEPropertiesFile(runAttr):
-	global sneeRoot
+	global sneeRoot, optGenerateNesCBineries
 	
 	str = '''# Determines whether graphs are to be generated.
 compiler.generate_graphs = true
@@ -126,7 +128,10 @@ sncb.include_command_server = false
 #   (power management currently does not work with avrora_mica2_t2, 
 #    for power management use avrora_micaz_t2)
 # tossim_t2 generates TinyOS v2 code for Tossim simulator
-sncb.code_generation_target = avrora_micaz_t2
+
+sncb.code_generation_target = %s
+
+
 
 # Turns the radio on/off during agenda evalauation, 
 # to enable power management to kick in.
@@ -143,7 +148,10 @@ results.history_size.tuples = 1000
 # for use by c-print monitor
 sncb.avrora_print_debug = true
 	'''
-	newStr = str % (runAttr['PhysicalSchemaFilename'])
+	if(optGenerateNesCBineries):
+		newStr = str % (runAttr['PhysicalSchemaFilename'], "avrora_micaz_t2")
+	else:
+		newStr = str % (runAttr['PhysicalSchemaFilename'], "null")
 	propsFilename =  "etc/exp" + runAttr["Experiment"] + "-snee.properties"
 	propsFile = open(sneeRoot+os.sep+propsFilename, "w")
 	propsFile.writelines(newStr)
@@ -294,6 +302,9 @@ def getAvroraCommandString(runAttr, avroraElfDir):
 	
 	return commandStr
 
+def defineTempSneeFilesRootDir():
+	return sneeRoot + os.sep + "output" + os.sep + "query1" + os.sep
+
 def generateAvroraJob(task,xVal,xValLabel,xValAttr,instance,runAttr,runAttrCols,rootOutputDir, runOutputDir, avroraJobsRootDir):
 	global sneeRoot, optScenarioDir
 
@@ -302,7 +313,7 @@ def generateAvroraJob(task,xVal,xValLabel,xValAttr,instance,runAttr,runAttrCols,
 	#1 Compile SNEEql query and compile the nesC to generate the Avrora binaries
 	compileQuery(runAttr)
 
-	sneeOutputDir = sneeRoot + os.sep + "output" + os.sep + "query1" + os.sep
+	sneeOutputDir =defineTempSneeFilesRootDir()
 
 	#2 Archive the output of SNEE in case we need to do a post mortem later
 	tempSneeFilesRootDir = rootOutputDir + os.sep + "tempSNEEFiles" + os.sep + runOutputDir

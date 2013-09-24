@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import re, getopt, logging, sys, os, string, UtilLib, CSVLib, AvroraLib, networkLib, shutil
-import SNEEMediator, MHOSCMediator, SBLib, equivRuns
+import SNEEMediator, MHOSCMediator, ODMediator, SBLib, equivRuns
 
 #Directory to read the scenario files from
 optScenarioDir = os.getcwd() + os.sep + "scenarios"
@@ -10,7 +10,7 @@ optLabel = ""
 optOutputDir = os.getenv('HOME')+os.sep+"tmp"+os.sep+"sensebench"+os.sep
 
 #Default list of platforms to run experiments over
-#optPlatList = ["MHOSC", "INSNEE"]
+#optPlatList = ["MHOSC", "INSNEE", "OD"]
 optPlatList = ["INSNEE"]
 
 #Default list of experiments to be run
@@ -66,7 +66,7 @@ def parseArgs(args):
 def usage():
 		print "runExp.py --scenario-dir=<dir>\n\t\tdefault="+optScenarioDir
 		print "\t--outputdir=<dir>\n\t\tdefault="+optOutputDir
-		print "\t--plat=<MHOSC,INSNEE>\n\t\tdefault="+str(optPlatList)
+		print "\t--plat=<MHOSC,INSNEE, OD>\n\t\tdefault="+str(optPlatList)
 		print "\t--exp=[1a,1b,2a,2b,3a,3b,4a,4b,5a,5b,6a,6b,7]\n\t\tdefault="+str(optExprList)
 		print "\t--num-instances=<int>\n\t\tdefault="+str(optNumInstances)
 		print "\t--use-condor=<bool>\n\t\tdefault="+str(optUseCondor)
@@ -139,6 +139,7 @@ def initRunAttr(exprAttr, x, xValLabel, xValAttr, instance, plat, task):
 	runAttr["Instance"] = instance
 	obtainNetworkTopologyAttributes(runAttr)
 	runAttr["Task"] = task
+	runAttr["CodeGenerationTarget"] = "avrora_micaz_t2"
 	return runAttr
 
 
@@ -180,8 +181,10 @@ def runExperiment(exprAttr, exprAttrCols, outputDir):
 					elif (plat == "MHOSC"):
 						MHOSCMediator.generateAvroraJob(task,xVal,xValLabel,xValAttr,instance,runAttr,runAttrCols,outputDir, runOutputDir, avroraJobsRootDir)
 					#TODO: OD
-					#elif (plat == "OD"):
-					#	ODMediator.generateAvroraJob(task,xVals,xValLabels,xValAttr,instance,runAttr,runAttrCols,outputDir, runOutputDir)
+					elif (plat == "OD"):
+						ODMediator.generateAvroraJob(task,xVals,xValLabels,xValAttr,instance,runAttr,runAttrCols,outputDir, runOutputDir, avroraJobsRootDir)
+					#elif (plat == "LD"):
+					#	LDMediator.generateAvroraJob(task,xVals,xValLabels,xValAttr,instance,runAttr,runAttrCols,outputDir, runOutputDir, avroraJobsRootDir)
 					#TODO: TinyDB
 					#elif (plat == "TinyDB"):
 					#	TinyDBMediator.generateAvroraJob(task,xVals,xValLabels,xValAttr,instance,runAttr,runAttrCols,outputDir, runOutputDir)
@@ -195,7 +198,8 @@ def runExperiment(exprAttr, exprAttrCols, outputDir):
 
 					#3 Log the (partial) results
 					SBLib.logResultsToFiles(runAttr, runAttrCols, optOutputDir, "runs")
-					
+					print "shutting down as in debug mode"
+					sys.exit(2)
 
 				
 def runExperiments(timeStamp, outputDir):
@@ -230,8 +234,9 @@ def init(timeStamp):
 		print "Scenarios directory %s not found" % (optScenarioDir)
 		sys.exit(2)
 	#will need to call init method for all platforms
-	SNEEMediator.init(optScenarioDir)
+	SNEEMediator.init(optScenarioDir, True)
 	MHOSCMediator.init(optScenarioDir, os.path.dirname(os.path.realpath(__file__))+os.sep+"MHOSC"+os.sep+"elf")
+	ODMediator.init(optScenarioDir, os.path.dirname(os.path.realpath(__file__))+os.sep+"OD")
 
 	optOutputDir += os.sep+timeStamp
 
@@ -241,6 +246,8 @@ def init(timeStamp):
 def cleanup():
 	SNEEMediator.cleanup(optScenarioDir)
 	MHOSCMediator.cleanup()
+	ODMediator.cleanup()
+	
 
 
 def main(): 	

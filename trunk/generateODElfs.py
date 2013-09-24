@@ -135,8 +135,6 @@ def generateElfsForExperimentalSetup(exprAttr, exprAttrCols):
 					continue
 					
 				generateElf(task,xVal,xValLabel,xValAttr,instance,runAttr,runAttrCols, runOutputDir)
-				print "shutting down for debug mode"
-				sys.exit(2)
 
 
 

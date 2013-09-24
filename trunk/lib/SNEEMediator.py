@@ -1,7 +1,6 @@
 import os, shutil, sys, re, string, AvroraLib
 
 sneeRoot = os.getenv('SNEEROOT')
-optGenerateNesCBineries = True
 
 tasks2queries = {"raw" : "RSTREAM SELECT * FROM seaDefence[NOW];", \
 		 "aggr" : "RSTREAM SELECT AVG(seaLevel) FROM seaDefence[NOW];", \
@@ -10,11 +9,10 @@ tasks2queries = {"raw" : "RSTREAM SELECT * FROM seaDefence[NOW];", \
 		 "LR" : "RSTREAM SELECT * FROM seaDefence[NOW];", #TODO: provide correct query
 		 "OD" : "RSTREAM SELECT * FROM seaDefence[NOW];"} #TODO: provide correct query 
 
-def init(scenarioDir, generateNesCBineries):
-	global sneeRoot, optScenarioDir, optGenerateNesCBineries
+def init(scenarioDir):
+	global sneeRoot, optScenarioDir
 
 	optScenarioDir = scenarioDir
-	optGenerateNesCBineries = generateNesCBineries
 	
 	#copy scenarios to SNEE directory
 	#TODO: check whether top files are needed (prob not)
@@ -36,7 +34,7 @@ def getSneeRoot():
 	return sneeRoot
 
 def createSNEEPropertiesFile(runAttr):
-	global sneeRoot, optGenerateNesCBineries
+	global sneeRoot
 	
 	str = '''# Determines whether graphs are to be generated.
 compiler.generate_graphs = true
@@ -149,9 +147,7 @@ results.history_size.tuples = 1000
 sncb.avrora_print_debug = true
 	'''
 	if(optGenerateNesCBineries):
-		newStr = str % (runAttr['PhysicalSchemaFilename'], "avrora_micaz_t2")
-	else:
-		newStr = str % (runAttr['PhysicalSchemaFilename'], "null")
+		newStr = str % (runAttr['PhysicalSchemaFilename'], runAttr['CodeGenerationTarget'])
 	propsFilename =  "etc/exp" + runAttr["Experiment"] + "-snee.properties"
 	propsFile = open(sneeRoot+os.sep+propsFilename, "w")
 	propsFile.writelines(newStr)

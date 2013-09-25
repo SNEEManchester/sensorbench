@@ -7,12 +7,13 @@ optExprList = ["1a", "1b", "2a", "2b", "3a", "3b", "4a", "4b", "5a", "5b", "6a",
 optNumInstances = 2
 optSkipEquivRuns = True
 optSourceRootDir = os.getcwd() + os.sep + "OD" + os.sep + "source"
+optVersion = 1
 
 
 def parseArgs(args):	
-	global optScenarioDir, optElfDir, optExprList, optNumInstances, optUseCondor
+	global optScenarioDir, optElfDir, optExprList, optNumInstances, optUseCondor, optVersion
 	try:
-		optNames = ["scenario-dir=", "elfdir=", "exp=", "num-instances=", "skip-equiv-runs=", "sourceRootDir="]
+		optNames = ["scenario-dir=", "elfdir=", "exp=", "num-instances=", "skip-equiv-runs=", "sourceRootDir=", "ODversion="]
 	
 		#append the result of getOpNames to all the libraries 
 		optNames = UtilLib.removeDuplicates(optNames)
@@ -24,10 +25,11 @@ def parseArgs(args):
 		sys.exit(2)
 			
 	for o, a in opts:
+		print o
 		if (o == "--scenario-dir"):
 			optScenarioDir = a
 		elif (o == "--elfdir"):
-			optOutputDir = a
+			optElfDir = a
 		elif (o == "--exp"):
 			optExprList = a.split(',')
 		elif (o == "--num-instances"):
@@ -36,6 +38,8 @@ def parseArgs(args):
 			optSkipEquivRuns = bool(a)
 		elif (o == "--sourceRootDir"):
 			optSourceRootDir = a
+		elif (o == "--ODversion"):
+			optVersion = int(a)
 		else:
 			usage()
 			sys.exit(2)
@@ -43,11 +47,12 @@ def parseArgs(args):
 
 def usage():
 		print "runExp.py --scenario-dir=<dir>\n\t\tdefault="+optScenarioDir
-		print "\t--elfdir=<dir>\n\t\tdefault="+optOutputDir
+		print "\t--elfdir=<dir>\n\t\tdefault="+optElfDir
 		print "\t--exp=[1a,1b,2a,2b,3a,3b,4a,4b,5a,5b,6a,6b,7]\n\t\tdefault="+str(optExprList)
 		print "\t--num-instances=<int>\n\t\tdefault="+str(optNumInstances)
 		print "\t--skip-equiv-runs=<boolean>\n\t\tdefault="+str(optSkipEquivRuns)
 		print "\t--sourceRootDir=<dir>\n\t\tdefault="+str(optSourceRootDir)
+		print "\t--ODversion=<1,2,3>\n\t\tdefault="+str(optVersion)
 
 def initRunAttr(exprAttr, x, xValLabel, xValAttr, instance, plat, task):
 	runAttr = exprAttr.copy()
@@ -139,7 +144,7 @@ def generateElfsForExperimentalSetup(exprAttr, exprAttrCols):
 
 
 def generateElf(task,xVal,xValLabel,xValAttr,instance,runAttr,runAttrCols, runOutputDir):
-	SNEEMediator.init(optScenarioDir, False)
+	SNEEMediator.init(optScenarioDir)
 	elfOutputFolder = optElfDir + os.sep + runOutputDir
 	#make elf output folder
 	os.makedirs(elfOutputFolder)
@@ -334,18 +339,20 @@ def generateNodeHeaderFiles(tempSneeFolder, elfOutputFolder, experiemntNameFolde
 			outputFile.close()
 
 def copyCorrectDataFilesFromStore(runOutputDir):
+	global optVersion
 	shutil.copy(optSourceRootDir+os.sep+"D3AppC.nc", runOutputDir)
 	shutil.copy(optSourceRootDir+os.sep+"D3C.nc", runOutputDir)
 	shutil.copy(optSourceRootDir+os.sep+"Makefile", runOutputDir)
 	shutil.copy(optSourceRootDir+os.sep+"AvroraPrint.h", runOutputDir)
-	shutil.copy(optSourceRootDir+os.sep+"Debug.h", runOutputDir)
+	if(optVersion ==1):
+		shutil.copy(optSourceRootDir+os.sep+"Debug.h", runOutputDir)
 
 def main(): 	
-	global optScenarioDir, optElfDir, optUseCondor
+	global optScenarioDir, optElfDir, optUseCondor, optVersion
 
 	#parse the command-line arguments
 	parseArgs(sys.argv[1:]) 
-
+	print optVersion
 	generateElfs(optElfDir)
 
 	print "\n OD elfs in directory:"+optElfDir

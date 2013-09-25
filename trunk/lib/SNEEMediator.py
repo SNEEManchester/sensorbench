@@ -146,8 +146,7 @@ results.history_size.tuples = 1000
 # for use by c-print monitor
 sncb.avrora_print_debug = true
 	'''
-	if(optGenerateNesCBineries):
-		newStr = str % (runAttr['PhysicalSchemaFilename'], runAttr['CodeGenerationTarget'])
+	newStr = str % (runAttr['PhysicalSchemaFilename'], runAttr['CodeGenerationTarget'])
 	propsFilename =  "etc/exp" + runAttr["Experiment"] + "-snee.properties"
 	propsFile = open(sneeRoot+os.sep+propsFilename, "w")
 	propsFile.writelines(newStr)

@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import re, getopt, logging, sys, os, string, UtilLib, CSVLib, AvroraLib, networkLib, shutil
-import SNEEMediator, MHOSCMediator, ODMediator, SBLib, equivRuns
+import SNEEMediator, MHOSCMediator, ODMediator, SBLib, equivRuns, LRMediator
 
 #Directory to read the scenario files from
 optScenarioDir = os.getcwd() + os.sep + "scenarios"
@@ -10,7 +10,7 @@ optLabel = ""
 optOutputDir = os.getenv('HOME')+os.sep+"tmp"+os.sep+"sensebench"+os.sep
 
 #Default list of platforms to run experiments over
-#optPlatList = ["MHOSC", "INSNEE", "OD"]
+#optPlatList = ["MHOSC", "INSNEE", "OD", "LR"]
 optPlatList = ["INSNEE"]
 
 #Default list of experiments to be run
@@ -66,7 +66,7 @@ def parseArgs(args):
 def usage():
 		print "runExp.py --scenario-dir=<dir>\n\t\tdefault="+optScenarioDir
 		print "\t--outputdir=<dir>\n\t\tdefault="+optOutputDir
-		print "\t--plat=<MHOSC,INSNEE, OD>\n\t\tdefault="+str(optPlatList)
+		print "\t--plat=<MHOSC,INSNEE, OD, LR>\n\t\tdefault="+str(optPlatList)
 		print "\t--exp=[1a,1b,2a,2b,3a,3b,4a,4b,5a,5b,6a,6b,7]\n\t\tdefault="+str(optExprList)
 		print "\t--num-instances=<int>\n\t\tdefault="+str(optNumInstances)
 		print "\t--use-condor=<bool>\n\t\tdefault="+str(optUseCondor)
@@ -183,8 +183,8 @@ def runExperiment(exprAttr, exprAttrCols, outputDir):
 					#TODO: OD
 					elif (plat == "OD"):
 						ODMediator.generateAvroraJob(task,xVals,xValLabels,xValAttr,instance,runAttr,runAttrCols,outputDir, runOutputDir, avroraJobsRootDir)
-					#elif (plat == "LD"):
-					#	LDMediator.generateAvroraJob(task,xVals,xValLabels,xValAttr,instance,runAttr,runAttrCols,outputDir, runOutputDir, avroraJobsRootDir)
+					elif (plat == "LR"):
+						LRMediator.generateAvroraJob(task,xVals,xValLabels,xValAttr,instance,runAttr,runAttrCols,outputDir, runOutputDir, avroraJobsRootDir)
 					#TODO: TinyDB
 					#elif (plat == "TinyDB"):
 					#	TinyDBMediator.generateAvroraJob(task,xVals,xValLabels,xValAttr,instance,runAttr,runAttrCols,outputDir, runOutputDir)
@@ -237,6 +237,7 @@ def init(timeStamp):
 	SNEEMediator.init(optScenarioDir)
 	MHOSCMediator.init(optScenarioDir, os.path.dirname(os.path.realpath(__file__))+os.sep+"MHOSC"+os.sep+"elf")
 	ODMediator.init(optScenarioDir, os.path.dirname(os.path.realpath(__file__))+os.sep+"OD")
+	LRMediator.init(optScenarioDir, os.path.dirname(os.path.realpath(__file__))+os.sep+"LR")
 
 	optOutputDir += os.sep+timeStamp
 
@@ -247,6 +248,7 @@ def cleanup():
 	SNEEMediator.cleanup(optScenarioDir)
 	MHOSCMediator.cleanup()
 	ODMediator.cleanup()
+	LRMediator.cleanup()
 	
 
 

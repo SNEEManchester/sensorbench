@@ -28,7 +28,9 @@ def getAvroraCommandString(runAttr, runAttrCols, avroraElfDir):
 	nodeCountStr = runAttr['NetworkSize']
 	elfString = getODElfFilename(runAttr)
 
-	commandStr = "avrora.Main -mcu=mts300 -platform=micaz -simulation=sensor-network -seconds=100 -monitors=leds,packet,energy,c-print -colors=false -random-seed=1 -sensor-data="
+	commandStr = "avrora.Main -mcu=mts300 -platform=micaz -simulation=sensor-network -seconds="
+	commandStr = str(simDuration) + " -monitors=leds,packet,energy,c-print -colors=false -random-seed=1 -sensor-data="
+
 	numberOfNodesInDeployment = runAttr['NetworkSize']
 	for nodeid in range(1,numberOfNodesInDeployment):
 		if(nodeid == numberOfNodesInDeployment -1):

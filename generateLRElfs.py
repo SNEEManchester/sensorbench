@@ -404,6 +404,9 @@ def generateNodeHeaderFiles(tempSneeFolder, elfOutputFolder, experiemntNameFolde
 	outputFile = open(elfOutputFolder+os.sep+"NOLEAFS", "w")
 	outputFile.write(str(noLeafs))
 	outputFile.close()
+	outputFile = open(elfOutputFolder+os.sep+"UniqueNodes", "w")
+	outputFile.write(str(uniqueNodes))
+	outputFile.close()
 	return uniqueNodes
 
 #takes the array of children and turns them into a string format

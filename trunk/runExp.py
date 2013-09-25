@@ -198,8 +198,6 @@ def runExperiment(exprAttr, exprAttrCols, outputDir):
 
 					#3 Log the (partial) results
 					SBLib.logResultsToFiles(runAttr, runAttrCols, optOutputDir, "runs")
-					print "shutting down as in debug mode"
-					sys.exit(2)
 
 				
 def runExperiments(timeStamp, outputDir):

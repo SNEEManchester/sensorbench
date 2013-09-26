@@ -57,7 +57,10 @@ def getAvroraCommandString(runAttr, runAttrCols, avroraElfDir):
 	commandStr= commandStr + "leaf.elf mote0.elf "
 
 	for nodeid in range(0,len(uniqueNodes)):
-		commandStr = commandStr + "mote" + str(uniqueNodes[nodeid]) + ".elf "
+		uniqueNodeid = uniqueNodes[nodeid]
+		if(len(uniqueNodeid.split(" ")) == 2):
+			uniqueNodeid = uniqueNodeid.split(" ")[1]
+		commandStr = commandStr + "mote" + str(uniqueNodeid) + ".elf "
 	return commandStr
 
 

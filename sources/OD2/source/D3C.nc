@@ -568,7 +568,7 @@ implementation{
 	* payload is a pointer to the actual information. It should be equal to getting the payload from the message itself
 	* len is the length of the payload (data) */
 	event message_t* Receive.receive(message_t* bufPtr, void* data, uint8_t len) {
-
+		char dbg_msg[30];
 		/* Only a parent node can receive messages in the D3 context. All received messages signify outliers
 		* (at the moment) */
 		#ifndef IS_ROOT
@@ -587,7 +587,7 @@ implementation{
 
 			
 			//Ixent added this for SenseBench
-			char dbg_msg[30];
+			
     	sprintf(dbg_msg, "DELIVER(id=%d,n=%d)",rcm->id, outlier);
     	printStr(dbg_msg);
 			#if DEBUG==	1

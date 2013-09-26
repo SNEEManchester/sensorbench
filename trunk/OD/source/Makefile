@@ -1,2 +1,0 @@
-COMPONENT=D3AppC
-include $(MAKERULES)

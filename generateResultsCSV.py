@@ -14,7 +14,8 @@ def parseArgs(args):
 
 	try:
 		optNames = ["condor-output-dir=", "output-dir="]
-		opts, args = getopt.getopt(args, "h", optNames)
+		
+		opts, args = getopt.getopt(args, "h",optNames)
 	except getopt.GetoptError, err:
 		print str(err)
 		usage()
@@ -23,9 +24,11 @@ def parseArgs(args):
 	for o, a in opts:
 		if (o == "--condor-output-dir"):
 			optCondorOutputDir = a
-		elif (o == "--outputDir"):
+		elif (o == "--output-dir"):
 			optOutputDir = a
-
+		else:
+			usage()
+			sys.exit(2)
 
 def usage():
 	print "generateResultsCSV.py --condor-output-dir=<dir> --output-dir=<dir>"

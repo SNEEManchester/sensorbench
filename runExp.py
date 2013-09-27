@@ -161,6 +161,7 @@ def runExperiment(exprAttr, exprAttrCols, outputDir):
 	xValLabels = exprAttr["XvalLabels"].split(";")
 
 	for plat in optPlatList:	
+		runTimeInit(plat)
 		for task in tasks:
 			for (xVal,xValLabel) in zip(xVals,xValLabels):
 				for instance in range(1,optNumInstances+1):
@@ -181,7 +182,7 @@ def runExperiment(exprAttr, exprAttrCols, outputDir):
 					elif (plat == "MHOSC"):
 						MHOSCMediator.generateAvroraJob(task,xVal,xValLabel,xValAttr,instance,runAttr,runAttrCols,outputDir, runOutputDir, avroraJobsRootDir)
 					#TODO: OD
-					elif (plat == "OD"):
+					elif (plat == "OD1" or plat == "OD2" or plat == "OD3"):
 						ODMediator.generateAvroraJob(task,xVals,xValLabels,xValAttr,instance,runAttr,runAttrCols,outputDir, runOutputDir, avroraJobsRootDir)
 					elif (plat == "LR"):
 						LRMediator.generateAvroraJob(task,xVals,xValLabels,xValAttr,instance,runAttr,runAttrCols,outputDir, runOutputDir, avroraJobsRootDir)
@@ -233,14 +234,16 @@ def init(timeStamp):
 		sys.exit(2)
 	#will need to call init method for all platforms
 	SNEEMediator.init(optScenarioDir)
-	MHOSCMediator.init(optScenarioDir, os.path.dirname(os.path.realpath(__file__))+os.sep+sources+os.sep+"MHOSC"+os.sep+"elf")
-	ODMediator.init(optScenarioDir, os.path.dirname(os.path.realpath(__file__))+os.sep+"OD")
-	LRMediator.init(optScenarioDir, os.path.dirname(os.path.realpath(__file__))+os.sep+"LR")
+	MHOSCMediator.init(optScenarioDir, os.path.dirname(os.path.realpath(__file__))+os.sep+"sources"+os.sep+"MHOSC"+os.sep+"elf")
+	LRMediator.init(optScenarioDir, os.path.dirname(os.path.realpath(__file__))+os.sep+"sources"+os.sep+"LR")
 
 	optOutputDir += os.sep+timeStamp
 
 	avroraJobsRootDir = optOutputDir + os.sep + "avroraJobs"
 
+
+def runTimeInit(ODplat):
+	ODMediator.init(optScenarioDir, os.path.dirname(os.path.realpath(__file__))+os.sep+"sources"+os.sep+str(ODplat))
 
 def cleanup():
 	SNEEMediator.cleanup(optScenarioDir)

@@ -2,16 +2,16 @@ import re, getopt, logging, sys, os, string, UtilLib, CSVLib, AvroraLib, network
 import SNEEMediator, SBLib, equivRuns
 
 optScenarioDir = os.getcwd() + os.sep + "scenarios"
-optElfDir = os.getcwd() + os.sep + "OD" + os.sep + "elfs"
+optVersion = 1
+optElfDir = os.getcwd() + os.sep + "sources" + os.sep + "OD" + str(optVersion) + os.sep + "elfs"
 optExprList = ["1a", "1b", "2a", "2b", "3a", "3b", "4a", "4b", "5a", "5b", "6a", "6b", "7"]
 optNumInstances = 2
 optSkipEquivRuns = True
-optSourceRootDir = os.getcwd() + os.sep + "OD" + os.sep + "source"
-optVersion = 1
+optSourceRootDir = os.getcwd() + os.sep + "sources" + os.sep + "OD" + str(optVersion) + os.sep + "source"
 
 
 def parseArgs(args):	
-	global optScenarioDir, optElfDir, optExprList, optNumInstances, optUseCondor, optVersion
+	global optScenarioDir, optElfDir, optExprList, optNumInstances, optUseCondor, optVersion, optSourceRootDir
 	try:
 		optNames = ["scenario-dir=", "elfdir=", "exp=", "num-instances=", "skip-equiv-runs=", "sourceRootDir=", "ODversion="]
 	
@@ -40,6 +40,8 @@ def parseArgs(args):
 			optSourceRootDir = a
 		elif (o == "--ODversion"):
 			optVersion = int(a)
+			optSourceRootDir = os.getcwd() + os.sep + "sources" + os.sep + "OD" + str(optVersion) + os.sep + "source"
+			optElfDir = os.getcwd() + os.sep + "sources" + os.sep + "OD" + str(optVersion) + os.sep + "elfs"
 		else:
 			usage()
 			sys.exit(2)
@@ -352,7 +354,6 @@ def main():
 
 	#parse the command-line arguments
 	parseArgs(sys.argv[1:]) 
-	print optVersion
 	generateElfs(optElfDir)
 
 	print "\n OD elfs in directory:"+optElfDir

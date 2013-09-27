@@ -384,6 +384,10 @@ implementation{
 	/* Method called when the moisture reading has been completed */
 	event void XSensor.readDone(error_t result, uint16_t data) {
 
+		//Ixent added this for SenseBench
+	      char dbg_msg[30];
+    	      sprintf(dbg_msg, "ACQUIRE(id=%d,n=%d,m=%d,d=%d)",TOS_NODE_ID, 0, 0, data);
+    	      printStr(dbg_msg);
 		if (result == SUCCESS){
 
 			/* Because we want to read data in couples (moisture, temperature), once the
@@ -400,7 +404,10 @@ implementation{
 
 	/* Method invoked after a Read operation has finished */
 	event void YSensor.readDone(error_t result, uint16_t data) {
-
+		//Ixent added this for SenseBench
+	      char dbg_msg[30];
+    	      sprintf(dbg_msg, "ACQUIRE(id=%d,n=%d,m=%d,d=%d)",TOS_NODE_ID, 0, 0, data);
+    	      printStr(dbg_msg);
 		/* If the read operation completed successfully, do what we need */
 		if (result == SUCCESS){
 
@@ -691,6 +698,9 @@ implementation{
 	* order to compute (a, b) */
 	task void computeLRParameters(){
 
+				//Ixent added this for SenseBench
+    				sprintf(dbg_msg, "DELIVER(id=%d,n=%d,n=%d)",sender, a,b);
+    				printStr(dbg_msg);
 		long tmp;
 		int32_t tmpNow;
 

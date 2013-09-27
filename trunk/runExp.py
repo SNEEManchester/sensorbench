@@ -233,7 +233,7 @@ def init(timeStamp):
 		sys.exit(2)
 	#will need to call init method for all platforms
 	SNEEMediator.init(optScenarioDir)
-	MHOSCMediator.init(optScenarioDir, os.path.dirname(os.path.realpath(__file__))+os.sep+"MHOSC"+os.sep+"elf")
+	MHOSCMediator.init(optScenarioDir, os.path.dirname(os.path.realpath(__file__))+os.sep+sources+os.sep+"MHOSC"+os.sep+"elf")
 	ODMediator.init(optScenarioDir, os.path.dirname(os.path.realpath(__file__))+os.sep+"OD")
 	LRMediator.init(optScenarioDir, os.path.dirname(os.path.realpath(__file__))+os.sep+"LR")
 

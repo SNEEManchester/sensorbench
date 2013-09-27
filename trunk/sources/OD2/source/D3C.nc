@@ -569,6 +569,9 @@ implementation{
 	* len is the length of the payload (data) */
 	event message_t* Receive.receive(message_t* bufPtr, void* data, uint8_t len) {
 		char dbg_msg[30];
+		uint8_t i = 0;
+				uint16_t actVal[DIMS];	/* here we store the normalized values */
+		
 		/* Only a parent node can receive messages in the D3 context. All received messages signify outliers
 		* (at the moment) */
 		#ifndef IS_ROOT
@@ -588,7 +591,13 @@ implementation{
 			
 			//Ixent added this for SenseBench
 			
-    	sprintf(dbg_msg, "DELIVER(id=%d,n=%d)",rcm->id, outlier);
+			/* Convert it back to an int16 */
+				/* Normalize the values so that they are in the range [0,1] as they should */
+				for ( ; i < DIMS; i++ )
+					actVal[i] = MIN_VAL + outlier[i] * (float)(MAX_VAL - MIN_VAL);
+				//printInt16( actVal[0] );
+
+    	sprintf(dbg_msg, "DELIVER(id=%d,n=%d)",rcm->id, actVal[0]);
     	printStr(dbg_msg);
 			#if DEBUG==	1
 			printTuple(outlier);

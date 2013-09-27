@@ -2,11 +2,11 @@ import re, getopt, logging, sys, os, string, UtilLib, CSVLib, AvroraLib, network
 import SNEEMediator, SBLib, equivRuns, Node
 
 optScenarioDir = os.getcwd() + os.sep + "scenarios"
-optElfDir = os.getcwd() + os.sep + "LR" + os.sep + "elfs"
+optElfDir = os.getcwd() + os.sep + "sources" + os.sep + "LR" + os.sep + "elfs"
 optExprList = ["1a", "1b", "2a", "2b", "3a", "3b", "4a", "4b", "5a", "5b", "6a", "6b", "7"]
 optNumInstances = 2
 optSkipEquivRuns = True
-optSourceRootDir = os.getcwd() + os.sep + "LR" + os.sep + "source"
+optSourceRootDir = os.getcwd() + os.sep + "sources" + os.sep + "LR" + os.sep + "source"
 
 
 def parseArgs(args):	

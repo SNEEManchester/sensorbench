@@ -175,6 +175,8 @@ implementation{
 
 	/* Only  the root computes the LR parameters (a, b) */
 	task void computeLRParameters();
+	/*only the root when its recieved a packet from a child can it deliver it out of network)*/
+	void computeLRParametersRootRecieved(uint8_t childID);
 
 	#endif
 
@@ -580,7 +582,7 @@ implementation{
 				* type of the node. If it is the root, it should compute the LR parameters.
 				* If it is an intermediate node, it should send all readings to the parent */
 				#ifdef IS_ROOT
-				post computeLRParameters();
+				computeLRParametersRootRecieved(rcm->id);
 				#else
 				post sendReadings();
 				#endif
@@ -697,10 +699,6 @@ implementation{
 	* regression classifier. The root needs to use its local values of temperature and moisture as well, in
 	* order to compute (a, b) */
 	task void computeLRParameters(){
-
-				//Ixent added this for SenseBench
-    				sprintf(dbg_msg, "DELIVER(id=%d,n=%d,n=%d)",sender, a,b);
-    				printStr(dbg_msg);
 		long tmp;
 		int32_t tmpNow;
 
@@ -726,6 +724,19 @@ implementation{
 		/* Move to the next cycle, starting after the appropriate time has elapsed */
 		call Timer.startOneShot( (uint32_t)tmpNow );
 	}
+
+	/* This task is only issued by the root node to compute (a, b) values that are required for the linear
+	* regression classifier. The root needs to use its local values of temperature and moisture as well, in
+	* order to compute (a, b) */
+	void computeLRParametersRootRecieved(uint8_t childID){
+		char dbg_msg[30];
+		//Ixent added this for SenseBench
+    sprintf(dbg_msg, "DELIVER(id=%d,n=%d,n=%d)",childID, a,b);
+   	printStr(dbg_msg);
+		post computeLRParameters();
+	}
+
+
 
 	/* Computes a and b from the already stored sumX, sumY, sumX2, sumXY and count */
 	void computeAB( ){

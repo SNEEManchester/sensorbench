@@ -66,7 +66,7 @@ def parseArgs(args):
 def usage():
 		print "runExp.py --scenario-dir=<dir>\n\t\tdefault="+optScenarioDir
 		print "\t--outputdir=<dir>\n\t\tdefault="+optOutputDir
-		print "\t--plat=<MHOSC,INSNEE, OD, LR>\n\t\tdefault="+str(optPlatList)
+		print "\t--plat=<MHOSC,INSNEE, OD1, OD2, OD3, LR>\n\t\tdefault="+str(optPlatList)
 		print "\t--exp=[1a,1b,2a,2b,3a,3b,4a,4b,5a,5b,6a,6b,7]\n\t\tdefault="+str(optExprList)
 		print "\t--num-instances=<int>\n\t\tdefault="+str(optNumInstances)
 		print "\t--use-condor=<bool>\n\t\tdefault="+str(optUseCondor)

@@ -225,7 +225,7 @@ implementation{
 		if (err == SUCCESS){
 
 			#ifndef IS_ROOT
-			//In case the mote is the ROOT of the tree, we do nothing
+			/* Start a timer, provided this is not the sink node (tree root) */
 			call Timer.startOneShot(1);
 			#endif
 		}else
@@ -259,14 +259,14 @@ implementation{
 		/* If all of the dimensions have been read */
 		if ( dimIdx == DIMS ){
 
+			/* Update the model that we have */
 			post updateModel();
 			return;
-		}
 
-		if ( dimIdx == 0 ){
+		}else{
 
-			/* This is the first time that the environment is sensed.
-			* Start by reading the first dimension, and call ThermalSensor */
+			/* In any other case, keep sensing the environment,
+			* until we have an entire tuple read */
 			call ThermalSensor.read();
 			return;
 		} 
@@ -275,11 +275,6 @@ implementation{
 
 	/* Method invoked after a Read operation has finished */
 	event void ThermalSensor.readDone(error_t result, uint16_t data) {
-				//Ixent added this for SenseBench
-	      char dbg_msg[30];
-    	  sprintf(dbg_msg, "ACQUIRE(id=%d,n=%d,m=%d,d=%d)",TOS_NODE_ID, 0, 0, data);
-    	  printStr(dbg_msg);
-
 
 		/* If the read operation completed successfully, do what we need */
 		if (result == SUCCESS){
@@ -289,13 +284,14 @@ implementation{
 			* until the buffer of readings has been filled. At that point, the read values
 			* are returned to the parent.*/
 
-			#if DEBUG
-			printInt16( data );
-			#endif
+			//Print that a new tuple was acquired
+			char dbg_msg[30];
+			sprintf(dbg_msg, "ACQUIRE(id=%d,n=%d,m=%d,d=%d)",TOS_NODE_ID, 0, 0, data);
+			printStr(dbg_msg);
 
-			/* Record the sensed value and log the time of occurence. The data read is for
-			* the same reading as before, but for another dimension. We have retrieved data
-			* from all dimensions, so we only need to go to the new tuple */
+
+			/* Record the sensed value. The data read is for the same reading as before,
+			* but for another dimension. Read the next dimension */
 			lastTuple[dimIdx] = data;
 			dimIdx++;
 
@@ -315,7 +311,7 @@ implementation{
 		int32_t remaining;	/* remaining time until we sense the next batch */
 		float normT[DIMS];	/* here we store the normalized values */
 
-		/* Normalize the values so that they are in the range [0,1] as they should */
+		/* Normalize the values so that they are in the range [0,1] (kernels require that) */
 		for ( i = 0; i < DIMS; i++ )
 			normT[i] = (float)(lastTuple[i] - MIN_VAL) / (float)(MAX_VAL - MIN_VAL);
 
@@ -326,17 +322,18 @@ implementation{
 		/* First of all, remove from the sample any tuple that its time has elapsed */
 		evictFromSample();
 
+		/* Check if the new tuple should be inserted in the sample */
 		if ( shouldInsert() ){
 
-			/* Should the current tuple be eligible for insertion, we find the index
-			* where it will be placed and add it there */
+			/* If yes, find the index where it will be placed and add it there */
 			uint16_t idx = selectTupleToEvict();
 			addTuple( normT, idx );
 		}		
 
+		/* Check if the new tuple is an outlier */
 		if ( isOutlier( normT ) ){
 
-			//Need to send this tuple to the parent as an outlier
+			/* Need to send this tuple to the parent as an outlier */
 			sendOutlier( normT );
 		}
 
@@ -568,37 +565,33 @@ implementation{
 	* payload is a pointer to the actual information. It should be equal to getting the payload from the message itself
 	* len is the length of the payload (data) */
 	event message_t* Receive.receive(message_t* bufPtr, void* data, uint8_t len) {
-		char dbg_msg[30];
-		uint8_t i = 0;
-				uint16_t actVal[DIMS];	/* here we store the normalized values */
 		
-		/* Only a parent node can receive messages in the D3 context. All received messages signify outliers
-		* (at the moment) */
+		/* Only a parent node can receive messages in the D3 context.
+		* All received messages signify outliers */
 		#ifndef IS_ROOT
 			/* Any intermediate node will simply send the reading upwards (to its parent node) */
 			call AMSend.send(parentId, bufPtr, len);
 		#else
 		{
-			/* In case this is the parent node, we output the tuple
-			* (assuming the appropriate monitor is used ) */
+			/* If this is the root node, we print the information of the received tuple */
+			uint8_t i = 0;
+			char dbg_msg[30];
 			float outlier[DIMS];
+			uint16_t actVal[DIMS];	/* here we store the normalized values */
 
 			/* Such messages are always (and only) sent from child nodes. Get the child node id */
 			radio_count_msg_t* rcm = (radio_count_msg_t*)data;
 
 			memcpy(outlier, rcm->readings, sizeof(float) * DIMS);
 
-			
-			//Ixent added this for SenseBench
-			
 			/* Convert it back to an int16 */
-				/* Normalize the values so that they are in the range [0,1] as they should */
-				for ( ; i < DIMS; i++ )
-					actVal[i] = MIN_VAL + outlier[i] * (float)(MAX_VAL - MIN_VAL);
-				//printInt16( actVal[0] );
+			for ( ; i < DIMS; i++ )
+				actVal[i] = MIN_VAL + outlier[i] * (float)(MAX_VAL - MIN_VAL);
 
-    	sprintf(dbg_msg, "DELIVER(id=%d,n=%d)",rcm->id, actVal[0]);
-    	printStr(dbg_msg);
+			//Ixent added this for SenseBench
+	    	sprintf(dbg_msg, "DELIVER(id=%d,n=%d)",rcm->id, actVal[0]);
+	    	printStr(dbg_msg);
+
 			#if DEBUG==	1
 			printTuple(outlier);
 			#endif

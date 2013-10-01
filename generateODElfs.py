@@ -116,6 +116,7 @@ def generateElfs(optElfDir):
 		generateElfsForExperimentalSetup(exprAttr, exprAttrCols)
 
 def generateElfsForExperimentalSetup(exprAttr, exprAttrCols):
+	global optVersion
 	print "generating elfs"
 	runAttrCols = exprAttrCols + ["AcquisitionRate", "BufferingFactor", "Platform", "Task", "xvalLabel", "Instance", "ExitCode", "PhysicalSchema", "NetworkSize", "Layout", "NetworkDensity","NetworkPercentSources", "SimulationDuration", "Tuple Acq Count", "Tuple Del Count", "Tuple Delta Sum", "Data Freshness", "Output Rate", "Delivery Rate", "Sum Energy", "Sum Energy 6M", "Max Energy", "Average Energy", "CPU Energy", "Sensor Energy", "Other Energy", "Network Lifetime secs", "Network Lifetime days", "Comments", "Equiv Run"]
 
@@ -132,7 +133,7 @@ def generateElfsForExperimentalSetup(exprAttr, exprAttrCols):
 
 
 
-				runAttr = initRunAttr(exprAttr, xVal, xValLabel, xValAttr, instance, "OD", task)
+				runAttr = initRunAttr(exprAttr, xVal, xValLabel, xValAttr, instance, "OD" + optVersion, task)
 				runOutputDir = SBLib.getRunOutputDir(runAttr)
 				#Does not create an Avrora Job if there is another run that produces
 				#equivalent results to this one

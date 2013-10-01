@@ -1,4 +1,4 @@
-
+import sys
 
 def colNameList(line):
 	colNameList = line.rstrip().split(',')
@@ -8,7 +8,11 @@ def line2Dict(line, colNameList):
 	dict = {}
 	vals = line.rstrip().split(',')
 	for i in range(0,len(vals)):
-		dict[colNameList[i]] = vals[i]
+		try:
+    			dict[colNameList[i]] = vals[i]
+		except IndexError:
+			print "value not found for line: "+line
+			sys.exit(2)
 	return dict
 
 def line(dict, colNameList):

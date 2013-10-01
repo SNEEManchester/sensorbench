@@ -43,14 +43,17 @@ def checkFilesDontExist():
 def parseRunResults(runAttr, runDirName):
 	global optCondorOutputDir
 	
+	print "Checking " + optCondorOutputDir + os.sep + runDirName
 	#find folder with run results for current line in all-results.csv	
 	if (os.path.exists(optCondorOutputDir + os.sep + runDirName)):
 		print runDirName
 		avroraLogFile = runDirName + os.sep + "out.txt"
 		#find output file and process
 		SBLib.getAvroraEnergyValues(avroraLogFile, runAttr)
-		parseAcquireDeliverTimes.parse(avroraLogFile, runAttr, True)
-
+		if (runAttr['Platform']=="INSNEE"):
+			parseAcquireDeliverTimes.parse(avroraLogFile, runAttr, True)
+		else:
+			parseAcquireDeliverTimes.parse(avroraLogFile, runAttr, False)
 
 #Generates one line per scenario instance in the CSV file 
 def generatePerRunResults():

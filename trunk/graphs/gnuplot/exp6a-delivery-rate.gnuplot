@@ -18,9 +18,10 @@ set xtics
 set datafile missing '?'
 set datafile separator ","
 
-#plot CSV_DIR.'exp1a-MHOSC-results.csv' using 13:23 title 'MHOSC', 
-plot CSV_DIR.'exp6a-INSNEE-results.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'raw'? column(DELIVERY_RATE_COL):1/0) title 'SNEE raw', \
-     CSV_DIR.'exp6a-INSNEE-results.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'aggr'? column(DELIVERY_RATE_COL):1/0) title 'SNEE aggr'
+#plot CSV_DIR.'exp1a-MHOSC-results-avg.csv' using 13:23 title 'MHOSC', 
+plot CSV_DIR.'exp6a-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'raw'? column(DELIVERY_RATE_COL):1/0) title 'SNEE raw', \
+     CSV_DIR.'exp6a-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'aggr'? column(DELIVERY_RATE_COL):1/0) title 'SNEE aggr', \
+     CSV_DIR.'exp6a-MHOSC-results-avg.csv' using XVAL_COL:DELIVERY_RATE_COL title 'MHOSC'
 #, \
-#     CSV_DIR.'exp6a-INSNEE-results.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'OD'? column(DELIVERY_RATE_COL):1/0) title 'SNEE OD'
+#     CSV_DIR.'exp6a-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'OD'? column(DELIVERY_RATE_COL):1/0) title 'SNEE OD'
 

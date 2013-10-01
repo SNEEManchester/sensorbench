@@ -18,6 +18,6 @@ set xtics
 set datafile missing '?'
 set datafile separator ","
 
-plot CSV_DIR.'exp5a-INSNEE-results.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'raw'? column(LIFETIME_COL):1/0) title 'SNEE raw', \
-     CSV_DIR.'exp5a-MHOSC-results.csv' using XVAL_COL:LIFETIME_COL title 'MHOSC'
+plot CSV_DIR.'exp5a-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'raw'? column(LIFETIME_COL):1/0) title 'SNEE raw', \
+     CSV_DIR.'exp5a-MHOSC-results-avg.csv' using XVAL_COL:LIFETIME_COL title 'MHOSC'
 

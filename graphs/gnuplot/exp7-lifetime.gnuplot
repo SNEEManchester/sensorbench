@@ -18,13 +18,12 @@ set xtics
 set datafile missing '?'
 set datafile separator ","
 
-#MHOSC
-plot CSV_DIR.'exp7-INSNEE-results.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'raw'? column(LIFETIME_COL):1/0) title 'SNEE raw', \
-     CSV_DIR.'exp7-INSNEE-results.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'aggr'? column(LIFETIME_COL):1/0) title 'SNEE aggr', \
-     CSV_DIR.'exp7-INSNEE-results.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'corr1'? column(LIFETIME_COL):1/0) title 'SNEE corr1', \
-     CSV_DIR.'exp7-INSNEE-results.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'corr2'? column(LIFETIME_COL):1/0) title 'SNEE corr2', \
-     CSV_DIR.'exp4a-MHOSC-results.csv' using XVAL_COL:LIFETIME_COL title 'MHOSC'
+plot CSV_DIR.'exp7-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'raw'? column(LIFETIME_COL):1/0) title 'SNEE raw', \
+     CSV_DIR.'exp7-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'aggr'? column(LIFETIME_COL):1/0) title 'SNEE aggr', \
+     CSV_DIR.'exp7-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'corr1'? column(LIFETIME_COL):1/0) title 'SNEE corr1', \
+     CSV_DIR.'exp7-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'corr2'? column(LIFETIME_COL):1/0) title 'SNEE corr2', \
+     CSV_DIR.'exp7-MHOSC-results-avg.csv' using XVAL_COL:LIFETIME_COL title 'MHOSC'
 #, \
-#     CSV_DIR.'exp7-INSNEE-results.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'LR'? column(LIFETIME_COL):1/0) title 'SNEE LR', \
-#     CSV_DIR.'exp7-INSNEE-results.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'OD'? column(LIFETIME_COL):1/0) title 'SNEE OD'
+#     CSV_DIR.'exp7-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'LR'? column(LIFETIME_COL):1/0) title 'SNEE LR', \
+#     CSV_DIR.'exp7-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'OD'? column(LIFETIME_COL):1/0) title 'SNEE OD'
 

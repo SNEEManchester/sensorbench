@@ -32,8 +32,8 @@
 
 */
 
+#include <stdio.h>
 #include <stdlib.h>
-#include "stdio.h"
 
 #include "Timer.h"	// For use of timer
 #include "Debug.h"	// For debugging purposes
@@ -104,9 +104,6 @@ implementation{
 	/* Dimensionality index. Shows which array to use next */
 	uint8_t dimIdx;
 
-	/* Set the desired time to 5 seconds */
-	#define DESIRED_TIME 5000
-
 	/************************************************************************
 	*			VARIABLES USED TO COMMUNICATE WITH ONE ANOTHER				* 
 	 ************************************************************************/
@@ -161,6 +158,8 @@ implementation{
 
 	/* Updates the model with the given tuple. The tuple is not normalized */
 	task void updateModel( );
+
+	void updateModel( float* normPnt );
 
 	float getVariance( uint8_t idx );
 	void updateVarianceEstimation( float* prevTpl, float* curTpl );
@@ -253,8 +252,7 @@ implementation{
 		if (err == SUCCESS){
 
 			#ifndef IS_ROOT
-			/* In case the mote is the ROOT of the tree, we do nothing.
-			* Otherwise, we begin a timer */
+			/* Start a timer, provided this is not the sink node (tree root) */
 			call Timer.startOneShot(1);
 			#endif
 		}else
@@ -291,20 +289,19 @@ implementation{
 			uint8_t i = 0;
 			float normT[DIMS];	/* here we store the normalized values */
 
-			/* Normalize the values so that they are in the range [0,1] as they should */
+			/* Normalize the values so that they are in the range [0,1] as they should.
+			* XXX Talk with Alan to see how the normT is generated */
 			for ( ; i < DIMS; i++ )
 				normT[i] = (float)(lastTuple[i] - MIN_VAL) / (float)(MAX_VAL - MIN_VAL);
 
 			/* In the Global D3 model, the tuple is sent upwards until it reaches the sink */
 			sendOutlier( normT );
-			post updateModel();
+//			post updateModel();
 			return;
-		}
 
-		if ( dimIdx == 0 ){
+		}else{
 
-			/* This is the first time that the environment is sensed.
-			* Start by reading the first dimension, and call ThermalSensor */
+			/* Unless we have read all dimensions of a single tuple, keep calling the thermal sensor.*/
 			call ThermalSensor.read();
 			return;
 		}
@@ -313,23 +310,19 @@ implementation{
 
 	/* Method invoked after a Read operation has finished */
 	event void ThermalSensor.readDone(error_t result, uint16_t data) {
-    	      //Ixent added this for SenseBench
-	      char dbg_msg[30];
-    	      sprintf(dbg_msg, "ACQUIRE(id=%d,n=%d,m=%d,d=%d)",TOS_NODE_ID, 0, 0, data);
-    	      printStr(dbg_msg);
 
 		/* If the read operation completed successfully, do what we need */
 		if (result == SUCCESS){
+
+			//Ixent added this for SenseBench
+			char dbg_msg[30];
+			sprintf(dbg_msg, "ACQUIRE(id=%d,n=%d,m=%d,d=%d)",TOS_NODE_ID, 0, 0, data);
+			printStr(dbg_msg);
 
 			/* Each node calls the read operation only after it has received data from its
 			* children. Therefore, the node performs a number of consecutive read operations,
 			* until the buffer of readings has been filled. At that point, the read values
 			* are returned to the parent.*/
-
-			#if DEBUG
-			  printStr("data2");
-			  printInt16( data );
-			#endif
 
 			/* Record the sensed value and log the time of occurence. The data read is for
 			* the same reading as before, but for another dimension. We have retrieved data
@@ -357,6 +350,21 @@ implementation{
 		for ( i = 0; i < DIMS; i++ )
 			normT[i] = (float)(lastTuple[i] - MIN_VAL) / (float)(MAX_VAL - MIN_VAL);
 
+		updateModel( normT );
+
+		clock++;
+
+		curTm = call Timer.getNow();
+		remaining = SAMPLING_FREQUENCY + epochStartTime - curTm;
+		if ( remaining <= 0 )
+			remaining = 1;
+		call Timer.startOneShot(remaining);
+	}
+
+
+	/* Updates the model with the provided normalized tuple */
+	void updateModel( float* normPnt ){
+
 		/* Unless we have reached the maximum window size, the window can expand */
 		if ( windowSize < MAX_WINDOW_SIZE )
 		    ++windowSize;
@@ -369,23 +377,26 @@ implementation{
 			/* Should the current tuple be eligible for insertion, we find the index
 			* where it will be placed and add it there */
 			uint16_t idx = selectTupleToEvict();
-			addTuple( normT, idx );
+			addTuple( normPnt, idx );
 		}		
 
-		if ( isOutlier( normT ) ){
+		if ( isOutlier( normPnt ) ){
 
-			//Need to send this tuple to the parent as an outlier
-			sendOutlier( normT );
+			/* The tuple is an outlier. DELIVER it */
+    		char dbg_msg[30];
+			uint16_t actVal[DIMS];	/* here we store the normalized values */
+			uint8_t i = 0;
+
+			/* De-normalize the values so that they are in the range [0,1] as they should */
+			for ( ; i < DIMS; i++ )
+				actVal[i] = MIN_VAL + outlier[i] * (float)(MAX_VAL - MIN_VAL);
+
+			//Ixent added this for SenseBench
+			sprintf(dbg_msg, "DELIVER(id=%d,n=%d)",sender, actVal[0]);
+			printStr(dbg_msg);
 		}
-
-		clock++;
-
-		curTm = call Timer.getNow();
-		remaining = SAMPLING_FREQUENCY + epochStartTime - curTm;
-		if ( remaining <= 0 )
-			remaining = 1;
-		call Timer.startOneShot(remaining);
 	}
+
 
 	/* Removes from the sample any tuples whose timing has elapsed */
 	void evictFromSample(){
@@ -519,7 +530,9 @@ implementation{
 	}
 
 	/** Returns the value of bandwidth according to Scott's rule
-	* (as was the case in the paper) */
+	* (as was the case in t			/* In case the mote is the ROOT of the tree, we do nothing.
+			* Otherwise, we start a timer */
+	he paper) */
 	double scottsRule( int16_t idx ) {
 		return sqrt5 * getVariance( idx ) * pow( sampleSize, -1.0 / (float) (DIMS + 4) );
 	}
@@ -619,7 +632,6 @@ implementation{
 	* payload is a pointer to the actual information. It should be equal to getting the payload from the message itself
 	* len is the length of the payload (data) */
 	event message_t* Receive.receive(message_t* bufPtr, void* data, uint8_t len) {
-    		char dbg_msg[30];
 
 		/* Only a parent node can receive messages in the D3 context. All received messages signify outliers
 		* (at the moment) */
@@ -628,61 +640,20 @@ implementation{
 			call AMSend.send(parentId, bufPtr, len);
 		#else
 		{
-			/* In case this is the parent node, we output the tuple
-			* (assuming the appropriate monitor is used ) */
+
+			/* In the OD1 case, we choose global outliers. When new tuples arrive from the network,
+			* we update our model and spit out the ones that are outliers */
 			float outlier[DIMS];
 
 			/* Such messages are always (and only) sent from child nodes. Get the child node id */
 			radio_count_msg_t* rcm = (radio_count_msg_t*)data;
 			uint8_t sender = rcm->id;
 
-			/* Check if we have previously received from that node */
-			if ( moteSent[sender] == FALSE ){
-
-				/* If this is the first time that we receive data, log it */
-				if ( pendingMotes == N_NODES )
-					startTime = call Timer.getNow();
-
-				/* The mote has definitely sent */
-				moteSent[sender] = TRUE;
-
-				/* The mote had not sent earlier, so reduce by 1 the number of pending motes */
-				--pendingMotes;
-
-				/* If all motes have now sent, check if we are OK with the time intervals */
-				if ( pendingMotes == 0 ){
-
-					/* Log the time that we received from all points */
-					uint32_t endTime = call Timer.getNow();
-					uint32_t elapsedTime = endTime - startTime;
-
-					if ( elapsedTime < DESIRED_TIME ){
-						printStr( "SUCCESS" );
-					}else{
-						printStr( "FAILURE" );
-					}
-
-					/* Initialize again, so that none of the motes has sent */
-					moteSent[sender] = FALSE;
-				}
-			}
-
 			memcpy(outlier, rcm->readings, sizeof(float) * DIMS);
 
-			
 			{
-				/* Convert it back to an int16 */
-				uint8_t i = 0;
-				uint16_t actVal[DIMS];	/* here we store the normalized values */
-
-				/* Normalize the values so that they are in the range [0,1] as they should */
-				for ( ; i < DIMS; i++ )
-					actVal[i] = MIN_VAL + outlier[i] * (float)(MAX_VAL - MIN_VAL);
-				//printInt16( actVal[0] );
-
-				//Ixent added this for SenseBench
-    				sprintf(dbg_msg, "DELIVER(id=%d,n=%d)",sender, actVal[0]);
-    				printStr(dbg_msg);
+				/* Update the global model for outlier detection */
+				updateModel( outlier );
 			}
 			
 		}

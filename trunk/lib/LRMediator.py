@@ -14,6 +14,12 @@ def cleanup():
 	print
 
 
+def taskSupported(task):
+	if (task in ["LR"]):
+		return True
+	else:
+		return False
+
 def getLRElfFilename(runAttr):
   return SBLib.getRunOutputDir(runAttr)
 

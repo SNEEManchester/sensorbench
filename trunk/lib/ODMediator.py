@@ -14,6 +14,12 @@ def cleanup():
 	print
 
 
+def taskSupported(task):
+	if (task in ["OD"]):
+		return True
+	else:
+		return False
+
 def getODElfFilename(runAttr):
   return SBLib.getRunOutputDir(runAttr)
 
@@ -47,7 +53,8 @@ def getAvroraCommandString(runAttr, runAttrCols, avroraElfDir):
 			commandStr = commandStr + "1,"
 
 	for nodeid in range(0,numberOfNodesInDeployment):
-		commandStr = commandStr + "mote" + str(nodeid) + ".elf "
+		commandStr = commandStr + "mote" + str(nodeid) + ".elf "
+
 	return commandStr
 
 

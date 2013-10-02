@@ -48,6 +48,7 @@ def parseRunResults(runAttr, runDirName):
 	if (os.path.exists(optCondorOutputDir + os.sep + runDirName)):
 		print runDirName
 		avroraLogFile = runDirName + os.sep + "out.txt"
+		print "simulationDuration=" + runAttr["SimulationDuration"]
 		#find output file and process
 		SBLib.getAvroraEnergyValues(avroraLogFile, runAttr)
 		if (runAttr['Platform']=="INSNEE"):
@@ -109,6 +110,10 @@ def generateAggregatedResults():
 		runAttr = CSVLib.line2Dict(line, runAttrCols)
 		if (runAttr['Experiment'].startswith('#')):
 			continue
+		if (int(runAttr['ExitCode'])!=0):
+			continue
+
+		print line
 
 		if runAttr.has_key('xvalLabel'):
 			currentX = runAttr["xvalLabel"]
@@ -124,7 +129,7 @@ def generateAggregatedResults():
 		if (currentX == prevX):
 			#Add averageable attributes from current runAttr to cumSumAttr
 			for attr in avgAttrList:
-				print attr
+				print attr + "=" + str(runAttr[attr])
 				cumSumAttr[attr] = float(cumSumAttr[attr]) + float(runAttr[attr])
 			counter += 1
 			continue

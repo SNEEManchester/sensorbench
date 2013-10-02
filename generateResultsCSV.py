@@ -70,6 +70,9 @@ def generatePerRunResults():
 			continue
 		runAttr = CSVLib.line2Dict(line, runAttrCols)
 
+		if (runAttr['Experiment'].startswith('#')):
+			continue
+
 		runDirName = SBLib.getRunOutputDir(runAttr)
 		if (runAttr['Equiv Run']):
 			runDirName = SBLib.getEquivRunOutputDir(runAttr)
@@ -104,6 +107,9 @@ def generateAggregatedResults():
 
 		#Non-header lines in the file
 		runAttr = CSVLib.line2Dict(line, runAttrCols)
+		if (runAttr['Experiment'].startswith('#')):
+			continue
+
 		if runAttr.has_key('xvalLabel'):
 			currentX = runAttr["xvalLabel"]
 		else:

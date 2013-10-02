@@ -62,6 +62,10 @@ def generateAvroraJob(task,xVal,xValLabel,xValAttr,instance,runAttr,runAttrCols,
 	avroraCommandStrFile = open(avroraCommandStrFileName, "w")
 	avroraCommandStrFile.writelines(avroraCommandStr)
 
+	#Needs to be populated
+	runAttr["ExitCode"] = 0
+	runAttr["BufferingFactor"] = 5
+
 
 #TODO: PROBABLY DOESN'T GO HERE
 def runMHOSCInAvrora(runAttr, outputDir):

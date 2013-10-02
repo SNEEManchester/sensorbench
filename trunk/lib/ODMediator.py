@@ -78,6 +78,11 @@ def generateAvroraJob(task,xVal,xValLabel,xValAttr,instance,runAttr,runAttrCols,
 	avroraCommandStrFile = open(avroraCommandStrFileName, "w")
 	avroraCommandStrFile.writelines(avroraCommandStr)
 
+	#Needs to be populated
+	runAttr["ExitCode"] = 0
+	runAttr["BufferingFactor"] = 1
+
+
 #TODO: PROBABLY DOESN'T GO HERE
 def runODInAvrora(runAttr, outputDir):
 	global OD_BETA

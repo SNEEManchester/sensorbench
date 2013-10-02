@@ -29,6 +29,13 @@ def cleanup(scenarioDir):
 		if os.path.exists(scenarioFile):
 			os.remove(scenarioFile)
 
+def taskSupported(task):
+	if (task in ["raw","aggr","corr1","corr2"]):
+		return True
+	else:
+		return False
+
+
 def getSneeRoot():
 	global sneeRoot
 	return sneeRoot

@@ -13,6 +13,11 @@ def cleanup():
 	#Do nothing!
 	print
 
+def taskSupported(task):
+	if (task in ["raw"]):
+		return True
+	else:
+		return False
 
 def getMHOSCElfFilename(runAttr):
 	a = runAttr['AcquisitionRate']

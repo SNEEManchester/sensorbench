@@ -69,6 +69,12 @@ def mapTopologyTypes(runAttr):
 			sys.exit(2)
 
 
+def fillInMissingVals(runAttr):
+	if (runAttr['Platform']=="MHOSC"):
+		runAttr["ExitCode"] = 0
+		runAttr["BufferingFactor"] = 5		
+
+
 #Generates one line per scenario instance in the CSV file 
 def generatePerRunResults():
 	global optCondorOutputDir, optOutputDir
@@ -86,6 +92,9 @@ def generatePerRunResults():
 
 		if (runAttr['Experiment'].startswith('#')):
 			continue
+
+		#Temporary fix
+		fillInMissingVals(runAttr)
 
 		if (not runAttr['Equiv Run']):
 			runDirName = SBLib.getRunOutputDir(runAttr)

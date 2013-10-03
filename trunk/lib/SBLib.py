@@ -1,6 +1,6 @@
 #This library holds functions used by more than one sensebench script
 
-import os, CSVLib, AvroraLib
+import os, CSVLib, AvroraLib, sys
 
 #Logs the contents of RunAttr hash for single file
 def logResultsToFile(runAttr, runAttrCols, resultsFileName):
@@ -28,10 +28,34 @@ def getRunOutputDir(runAttr):
 	return "exp"+runAttr["Experiment"]+"-"+runAttr["Platform"]+"-x"+runAttr["xvalLabel"]+"-"+runAttr["Task"]+"-"+str(runAttr["Instance"])
 
 
-#Returns dirname of equivalent run according to convention
 def getEquivRunOutputDir(runAttr):
 	return "exp"+runAttr["Equiv Run"]+"-"+runAttr["Platform"]+"-x"+runAttr["xvalLabel"]+"-"+runAttr["Task"]+"-"+str(runAttr["Instance"])
 
+
+def copyEquivRunResults(runAttr, runAttrCols, outputDir, label):
+	resultsFileName = outputDir+os.sep+"all-"+label+".csv"
+	equivRunOutputDir = getEquivRunOutputDir(runAttr)
+	exp = runAttr["Experiment"]
+	equivRun = runAttr["Equiv Run"]
+
+	first = True
+	for line in open(resultsFileName, 'r'):
+		if first:
+			currentRunAttrCols = CSVLib.colNameList(line)
+			first = False
+			continue
+
+		currentRunAttr = CSVLib.line2Dict(line, currentRunAttrCols)
+		currentRunOutputDir = getRunOutputDir(currentRunAttr)
+		if (equivRunOutputDir == currentRunOutputDir): #checks matching platform, xval, task, instance
+			
+			for col in currentRunAttrCols:
+				runAttr[col] = currentRunAttr[col]
+			runAttr["Experiment"] = exp #put original experiment id back in
+			runAttr["Equiv Run"] = equivRun
+			return
+	print "ERROR: Equivalent run data not found for "+str(runAttr)
+	sys.exit(2)
 
 #copies parsed values from Avrora simulation into runAttr hash table
 def getAvroraEnergyValues(avroraLogFile, runAttr):

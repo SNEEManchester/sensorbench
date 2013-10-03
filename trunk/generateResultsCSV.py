@@ -74,11 +74,12 @@ def generatePerRunResults():
 		if (runAttr['Experiment'].startswith('#')):
 			continue
 
-		runDirName = SBLib.getRunOutputDir(runAttr)
-		if (runAttr['Equiv Run']):
-			runDirName = SBLib.getEquivRunOutputDir(runAttr)
-		
-		parseRunResults(runAttr, runDirName)
+		if (not runAttr['Equiv Run']):
+			runDirName = SBLib.getRunOutputDir(runAttr)
+			parseRunResults(runAttr, runDirName)
+		else:
+			SBLib.copyEquivRunResults(runAttr, runAttrCols, optOutputDir, "results-raw")
+
 		#Recreates the CSV, this time with the results from the Avrora simulation
 		SBLib.logResultsToFiles(runAttr, runAttrCols, optOutputDir, "results-raw")			
 

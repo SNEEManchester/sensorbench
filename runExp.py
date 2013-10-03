@@ -19,9 +19,9 @@ optPlatList = ["INSNEE"]
 optExprList = ["1a", "1b", "2a", "2b", "3a", "3b", "4a", "4b", "5a", "5b", "6a", "6b", "7"]
 #optExprList = ["1a"]
 
-#Parameter to determine number of instances of each scenario to run
-#optNumInstances = 10
-optNumInstances = 2
+#Parameters to determine which instances of each scenario to run (inclusive-inclusive range)
+optStartInstance = 1
+optEndInstance = 2
 
 #Flag to determine whether Avrora jobs will be executed via Condor parallel execution system
 optUseCondor = True
@@ -30,9 +30,9 @@ optUseCondor = True
 optSkipEquivRuns = True
 
 def parseArgs(args):	
-	global optScenarioDir, optOutputDir, optPlatList, optExprList, optNumInstances, optUseCondor
+	global optScenarioDir, optOutputDir, optPlatList, optExprList, optStartInstance, optEndInstance, optUseCondor
 	try:
-		optNames = ["scenario-dir=", "outputdir=", "plat=", "exp=", "num-instances=", "use-condor=", "skip-equiv-runs="]
+		optNames = ["scenario-dir=", "outputdir=", "plat=", "exp=", "start-instance=", "end-instance=", "use-condor=", "skip-equiv-runs="]
 	
 		#append the result of getOpNames to all the libraries 
 		optNames = UtilLib.removeDuplicates(optNames)
@@ -52,8 +52,10 @@ def parseArgs(args):
 			optPlatList = a.split(',')
 		elif (o == "--exp"):
 			optExprList = a.split(',')
-		elif (o == "--num-instances"):
-			optNumInstances = int(a)	
+		elif (o == "--start-instance"):
+			optStartInstance = int(a)
+		elif (o == "--end-instance"):
+			optEndInstance = int(a)	
 		elif (o == "--use-condor"):
 			optUseCondor = bool(a)
 		elif (o == "--skip-equiv-runs"):
@@ -68,7 +70,8 @@ def usage():
 		print "\t--outputdir=<dir>\n\t\tdefault="+optOutputDir
 		print "\t--plat=<MHOSC,INSNEE, OD1, OD2, OD3, LR>\n\t\tdefault="+str(optPlatList)
 		print "\t--exp=[1a,1b,2a,2b,3a,3b,4a,4b,5a,5b,6a,6b,7]\n\t\tdefault="+str(optExprList)
-		print "\t--num-instances=<int>\n\t\tdefault="+str(optNumInstances)
+		print "\t--start-instance=<int>\n\t\tdefault="+str(optStartInstance)
+		print "\t--end-instance=<int>\n\t\tdefault="+str(optEndInstance)
 		print "\t--use-condor=<bool>\n\t\tdefault="+str(optUseCondor)
 
 
@@ -161,7 +164,7 @@ def taskSupported(plat, task):
 		sys.exit(2)
 
 def runExperiment(exprAttr, exprAttrCols, outputDir):
-	global optPlatList, optNumInstances, optSkipEquivRuns
+	global optPlatList, optStartInstance, optEndInstance, optSkipEquivRuns
 
 	print "runExperiments"
 	runAttrCols = exprAttrCols + ["AcquisitionRate", "BufferingFactor", "Platform", "Task", "xvalLabel", "Instance", "ExitCode", "PhysicalSchema", "NetworkSize", "Layout", "NetworkDensity","NetworkPercentSources", "SimulationDuration", "Tuple Acq Count", "Tuple Del Count", "Tuple Delta Sum", "Data Freshness", "Output Rate", "Delivery Rate", "Sum Energy", "Sum Energy 6M", "Max Energy", "Average Energy", "CPU Energy", "Sensor Energy", "Other Energy", "Network Lifetime secs", "Network Lifetime days", "Comments", "Equiv Run"]
@@ -178,7 +181,7 @@ def runExperiment(exprAttr, exprAttrCols, outputDir):
 				continue;
 
 			for (xVal,xValLabel) in zip(xVals,xValLabels):
-				for instance in range(1,optNumInstances+1):
+				for instance in range(optStartInstance,optEndInstance+1):
 					exprAttr["Instance"] = instance
 					print "\n**********Experiment="+exprAttr['Experiment']+" Platform="+plat+" task="+task+" x="+xVal + " xLabel="+xValLabel+" instance="+str(exprAttr["Instance"])	
 					runAttr = initRunAttr(exprAttr, xVal, xValLabel, xValAttr, instance, plat, task)

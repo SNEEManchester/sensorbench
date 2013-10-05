@@ -165,7 +165,6 @@ def taskSupported(plat, task):
 
 def runExperiment(exprAttr, exprAttrCols, outputDir):
 	global optPlatList, optStartInstance, optEndInstance, optSkipEquivRuns
-
 	print "runExperiments"
 	runAttrCols = exprAttrCols + ["AcquisitionRate", "BufferingFactor", "Platform", "Task", "xvalLabel", "Instance", "ExitCode", "PhysicalSchema", "NetworkSize", "Layout", "NetworkDensity","NetworkPercentSources", "SimulationDuration", "Tuple Acq Count", "Tuple Del Count", "Tuple Delta Sum", "Data Freshness", "Output Rate", "Delivery Rate", "Sum Energy", "Sum Energy 6M", "Max Energy", "Average Energy", "CPU Energy", "Sensor Energy", "Other Energy", "Network Lifetime secs", "Network Lifetime days", "Comments", "Equiv Run"]
 
@@ -174,7 +173,10 @@ def runExperiment(exprAttr, exprAttrCols, outputDir):
 	xVals = exprAttr[xValAttr+"s"].split(";")
 	xValLabels = exprAttr["XvalLabels"].split(";")
 
-	for plat in optPlatList:	
+	for task in tasks:
+		print task;
+
+	for plat in optPlatList:
 		runTimeInit(plat)
 		for task in tasks:
 			if (not taskSupported(plat, task)):

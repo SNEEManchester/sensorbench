@@ -69,6 +69,7 @@ def generateAvroraJob(task,xVal,xValLabel,xValAttr,instance,runAttr,runAttrCols,
 	#Copy elf files to Avrora Job dir
 	if (os.path.exists(optAvroraElfDir)):
 		f = getODElfFilename(runAttr)
+		print f
 		for fileName in os.listdir(optAvroraElfDir + os.sep + "elfs" + os.sep + f):
 			shutil.copy(optAvroraElfDir + os.sep + "elfs" + os.sep + f + os.sep + fileName, avroraJobDir + os.sep + fileName)
 			    

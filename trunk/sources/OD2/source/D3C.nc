@@ -37,6 +37,8 @@
 #include "AvroraPrint.h"	// For debugging purposes
 #include "D3.h"
 
+#include "CommQueue.h"
+
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -60,10 +62,11 @@ module D3C @safe() {
 		interface Read<uint16_t> as ThermalSensor;
 
 		/* Those interfaces are necessary for communication */
-		interface AMSend;
-		interface Receive;
-		interface SplitControl as AMControl;
+		interface AMSend as RadioSend;
+		interface Receive as RadioReceive;
+		interface SplitControl as RadioControl;
 		interface Packet;
+		interface PacketLink;	/* For more reliable sending */
 
 		/* To create a random sample from the input data */
 		interface Random;
@@ -104,17 +107,16 @@ implementation{
 	/************************************************************************
 	*			VARIABLES USED TO COMMUNICATE WITH ONE ANOTHER				* 
 	 ************************************************************************/
+	message_t packet;
+
 	/* The id of the parent node of this mote */
 	uint8_t parentId = PARENT_NODE_ID;
-
-	/* It may be better to have one packet for receiving messages and one for outgoing */
-	message_t packet;
-	radio_count_msg_t lclPayload;	/* local copy of what will be sent */
 
 	/****************************************************************************************
 	* 		CUSTOM COMMAND DECLARATION. Both Components and Tasks			*
 	*****************************************************************************************/
-	uint16_t randomInt(uint16_t n);		/* Returns a new random int number */
+	float percent();					/* Returns a random number in [0,1] */
+	uint16_t randomInt(uint16_t n);		/* Returns a new random int number, in the range [0, n) */
 	double IFEpanech(double x);	/* Returns the Integral of the Epanechnikov value of number x */
 	double IEpanech(float* newPnt, float* smpPnt);
 
@@ -128,7 +130,10 @@ implementation{
 	bool isOutlier( float* tuple );
 
 	/* This method is used to send the new point to the parent as an outlier */
-	void sendOutlier( float* tuple );
+	int32_t seqNo;
+	comm_queue_t* lastCommMsg;
+	void task sendData();
+	void sendOutlier( uint16_t* tuple );
 
 	/* Clears the sample from all of the tuples that should be evicted
 	 (actually there is only one such tuple each time the function is called) */
@@ -158,6 +163,9 @@ implementation{
 
 	float getVariance( uint8_t idx );
 	void updateVarianceEstimation( float* prevTpl, float* curTpl );
+
+
+	/**************************** SECTION WITH MATERIAL ABOUT DEBUGGING ****************************/
 
 	/* Waste CPU cycles, to be able to print after that */
 	#if DEBUG
@@ -190,6 +198,9 @@ implementation{
 
 	#endif
 
+	/**************************** **************************** ****************************/
+
+
 
 	/****************************************************************************************
 	* 		From this point on, we have the methods that will be called		*
@@ -198,42 +209,41 @@ implementation{
  	/* Event fired once the application is started */
 	event void Boot.booted() {
 
-		/* The lclPayload is always sent by this ID, so we can simply use the TOS_NODE_ID */
-		lclPayload.id = TOS_NODE_ID;
+		/* Initialize information about the sample we maintain */
 		sampleSize = 0;
 		oldestTupleIdx = 0;
 		memset(used, 0, sizeof(bool) * SAMPLE_SIZE);
 
+		/* Initialize informatino for the communication queue. 1st tuple ever for this node,
+		* there is no previous communication message */
+		seqNo = 0;
+		lastCommMsg = 0x0;
+
 		/* If the message size is too big for the payload, we just ignore it */
-		if ( sizeof(radio_count_msg_t) > call AMSend.maxPayloadLength() )
+		if ( sizeof( comm_queue_t ) > call RadioSend.maxPayloadLength() )
 			printInt16(RADIO_MSG_TOO_LARGE);
 
 		/* Initialize the radio controller of this mote */
-		if (call AMControl.start() != SUCCESS)
+		if (call RadioControl.start() != SUCCESS)
 			printInt16(AM_CONTROL_NOT_STARTED);
 	}
 
-	/* 
-	* WHY DO I NEED TO START THE AM Controler? WHAT IS THE AMControl???
-	* ANS: The AMController is required to start / stop the radio transmitter.
-	*
-	* When the AMControl has started (the radio is ready for use) , I need to
-	* start a timer, and anything else I was doing in the booted() method earlier. */
-	event void AMControl.startDone(error_t err) {
+	/* When the RadioControl has started (the radio is ready for use), start a timer
+	* for the sampling period. */
+	event void RadioControl.startDone(error_t err) {
 
 		/* If the AMControl was started successfully, we simply need to begin sensing */
 		if (err == SUCCESS){
 
-			#ifndef IS_ROOT
 			/* Start a timer, provided this is not the sink node (tree root) */
-			call Timer.startOneShot(1);
-			#endif
+			if ( TOS_NODE_ID != 0 )
+				call Timer.startOneShot(1);
 		}else
-			call AMControl.start();
+			call RadioControl.start();
 	}
 
 	/* Event occuring when the AM controller is requested to stop */
-	event void AMControl.stopDone(error_t err) {}
+	event void RadioControl.stopDone(error_t err) {}
 
 
 	/* Method invoked when the timer event fires. The action we take depends on whether we 
@@ -316,8 +326,8 @@ implementation{
 			normT[i] = (float)(lastTuple[i] - MIN_VAL) / (float)(MAX_VAL - MIN_VAL);
 
 		/* Unless we have reached the maximum window size, the window can expand */
-	        if ( windowSize < MAX_WINDOW_SIZE )
-	            ++windowSize;
+        if ( windowSize < MAX_WINDOW_SIZE )
+            ++windowSize;
 
 		/* First of all, remove from the sample any tuple that its time has elapsed */
 		evictFromSample();
@@ -328,13 +338,13 @@ implementation{
 			/* If yes, find the index where it will be placed and add it there */
 			uint16_t idx = selectTupleToEvict();
 			addTuple( normT, idx );
-		}		
+		}
 
 		/* Check if the new tuple is an outlier */
 		if ( isOutlier( normT ) ){
 
 			/* Need to send this tuple to the parent as an outlier */
-			sendOutlier( normT );
+			sendOutlier( lastTuple );
 		}
 
 		clock++;
@@ -354,7 +364,7 @@ implementation{
 
 		/* If we can not evict the oldest tuple, 
 		* then no other tuple can either be evicted. Exit the loop */
-		if ( clock - sampleTimes[oldestTupleIdx] < MAX_WINDOW_SIZE )
+		if ( (clock - sampleTimes[oldestTupleIdx]) < MAX_WINDOW_SIZE )
 			return;
 
 		/* Else, copy the tuple that will be replaced */
@@ -393,6 +403,7 @@ implementation{
 	}
 
 
+	/* Find the index of the oldest tuple that we have stored in our sample */
 	void findNextOldestTuple(){
 
 		uint16_t i = 1;
@@ -405,17 +416,15 @@ implementation{
 				oldestTupleIdx = i;
 	}
 
+
 	/* Whether the tuple should be inserted in the sample */
 	bool shouldInsert(){
 
-		/* Check if we will include the point in the random sample. Use 8 bits, to better control what is happening.
-		* FIXME: Maybe, we should revert to 16 bits later */
-		uint16_t randVal;
-		uint16_t maxRand = 0xFFFF;
+		/* Get a random integer value */
+		float val = percent();
 
-		randVal = call Random.rand16() & maxRand;
-
-		return ( ((float) randVal / (float) maxRand) <= SAMPLE_PRCNT );
+		/* Turn that in the random value */
+		return ( val <= SAMPLE_PRCNT );
 	}
 
 
@@ -549,83 +558,168 @@ implementation{
         return product;
     }
 
-	/** CODE EXECUTED (APPARENTLY) WHEN A NEW MESSAGE IS SENT OVER THE NETWORK */
-	event void AMSend.sendDone(message_t* bufPtr, error_t error) {
 
+	/***************************** ***************************** *****************************/
+	/***************************** FUNCTIONS 4 NTW COMMUNICATION *****************************/
+	/***************************** ***************************** *****************************/
+
+	/* This method enqueues the given tuple for sending through the network. The tuple has
+	* been characterized as an outlier, and we need to send it across the network. */
+	void sendOutlier( uint16_t* tuple ){
+
+		/* Create a new item that we are going to fill in and enqueue it for sending in the network */
+		comm_queue_t msg;
+
+		/* Fill in the details of the message that we want */
+		msg.id = TOS_NODE_ID;
+		msg.seqNo = seqNo;
+		memcpy( msg.data, tuple, DATA_SIZE );
+
+		/* Enqueue it for sending */
+		if ( enqueue( msg ) == QUEUE_SUCCESS ){
+			/* Item enqueued successfully. Post the sending task */
+			post sendData();
+		}
+
+		seqNo++;
+	}
+
+	/* Task that performs the actual sending of a packet from the communication queue */
+	void task sendData(){
+
+		/* Method called for sending. If no previous message exists, dequeue one */
+		if ( lastCommMsg == 0x0 )
+			lastCommMsg = dequeue();
+
+		/* The dequeued value is the actual payload (the information we care about) */
+		memcpy( call RadioSend.getPayload( &packet, sizeof( comm_queue_t ) ), lastCommMsg, sizeof( comm_queue_t ) );
+
+		/* Add some retries for more robust communication */
+		call PacketLink.setRetries( &packet, 3 );
+		call PacketLink.setRetryDelay( &packet, 0 );
+
+		/* Send the packet across the network */
+		if ( call RadioSend.send( parentId, &packet, sizeof( comm_queue_t ) ) != SUCCESS ){
+
+			/* We failed to send the item (h/w failure). Repost the task */
+			post sendData();
+		}
+	}
+
+	/* Task called when the send() method has completed. We need to check the error code
+	* and whether there are any pending messages in the queue for network propagation */
+	event void RadioSend.sendDone(message_t* bufPtr, error_t error) {
+
+		uint8_t queueSize;
+		bool resend = FALSE;
+
+		/* Get the size of the queue */
+		queueSize = queue_size();
+
+		/* Check if we had a problem during sending */
+		if ( error != SUCCESS ){
+
+			resend = TRUE;
+
+		}else{
+			if ( queueSize != 0 ){
+
+				/* If the last packet has been delivered (and ack'ed), but there are pending items
+				in the communication queue, send these as well. Reset the latestMessage */
+				resend = TRUE;
+				lastCommMsg = 0x0;
+			}
+		}
+		
+		/* If we must resend, post the sendData task again */
+		if ( resend == TRUE )
+			post sendData();
 	}
 
 
-	/************************************************************************************************
-	* 		The following is code required for communication between motes			*
-	*************************************************************************************************/
-
-	/* CODE EXECUTED (APPARENTLY) WHEN A MESSAGE IS RECEIVED FROM THE NETWORK
+	/* Event task executed when a message is received from the network.
+	* In our case, received messages are forwarded up the propagation chain, until they reach
+	* the sink / gateway node. No local computations are performed in this setting.
 	*
 	* bufPtr is a pointer to the message that has just been received.
 	* payload is a pointer to the actual information. It should be equal to getting the payload from the message itself
 	* len is the length of the payload (data) */
-	event message_t* Receive.receive(message_t* bufPtr, void* data, uint8_t len) {
+	event message_t* RadioReceive.receive( message_t* bufPtr, void* data, uint8_t len ) {
 		
 		/* Only a parent node can receive messages in the D3 context.
 		* All received messages signify outliers */
-		#ifndef IS_ROOT
-			/* Any intermediate node will simply send the reading upwards (to its parent node) */
-			call AMSend.send(parentId, bufPtr, len);
-		#else
-		{
+		if ( TOS_NODE_ID != 0 ){
+
+			/* This is not the ROOT node. Any data received here are not destined for this node.
+			* Enqueue the received message for communication up the routing tree */
+			comm_queue_t msg;
+			memcpy( &msg, data, sizeof( comm_queue_t ) );
+
+			/* If the message has been successfully enqueued, post the sending task */
+			if ( enqueue( msg ) == QUEUE_SUCCESS )
+				post sendData();
+
+		} else {
+
 			/* If this is the root node, we print the information of the received tuple */
-			uint8_t i = 0;
 			char dbg_msg[30];
-			float outlier[DIMS];
-			uint16_t actVal[DIMS];	/* here we store the normalized values */
+			uint16_t outlier[DIMS];	/* The outlier values */
+			comm_queue_t* rcm = (comm_queue_t*)data;
 
 			/* Such messages are always (and only) sent from child nodes. Get the child node id */
-			radio_count_msg_t* rcm = (radio_count_msg_t*)data;
+			memcpy(outlier, rcm->data, DATA_SIZE );
 
-			memcpy(outlier, rcm->readings, sizeof(float) * DIMS);
+			/* XXX I should be enqueueing the received message to avoid reporting it twice.
+			* XXX Alternatively, keep track of the sequence number for each node that can send */
 
-			/* Convert it back to an int16 */
-			for ( ; i < DIMS; i++ )
-				actVal[i] = MIN_VAL + outlier[i] * (float)(MAX_VAL - MIN_VAL);
-
-			//Ixent added this for SenseBench
-	    	sprintf(dbg_msg, "DELIVER(id=%d,n=%d)",rcm->id, actVal[0]);
+			/* Ixent added this for SenseBench */
+	    	sprintf(dbg_msg, "DELIVER(id=%d,n=%d)", (int)rcm->id, outlier[0]);
 	    	printStr(dbg_msg);
-
-			#if DEBUG==	1
-			printTuple(outlier);
-			#endif
 		}
-		#endif
 
-				
 		/* In any case, the buffer pointer is returned */
 		return bufPtr;
 	}
 
+	/***************************** ***************************** *****************************/
+	/***************************** ***************************** *****************************/
+	/***************************** ***************************** *****************************/
 
-	/****************************************************************************************
-	* 				LOCALLY CREATED TASKS	 				*
-	*****************************************************************************************/
 
+	/**************************** **************************** ****************************/
+	/**************************** SIMPLE HELPER MATH FUNCTIONS ****************************/
+	/**************************** **************************** ****************************/
 
-	/* This method is used to send the latest received point to the parent of this node, as an outlier.
-	* The parent node only expects outliers, so the application logic does not require to do much! */
-	void sendOutlier( float* tuple ){
+	/* Returns a randomly generated uint16_t value. */
+	float percent( ){
 
-		/* Copy the new point values to the buffer that will be sent */
-		memcpy( lclPayload.readings, tuple, DIMS * sizeof(float) );
+		uint16_t maxRand = 0xFFFF;
+		uint16_t randVal = randomInt( maxRand );
 
-		/* Copy the item to the payload of the packet that we'll send */
-		memcpy( call AMSend.getPayload(&packet, sizeof(radio_count_msg_t)), &lclPayload, sizeof(radio_count_msg_t) );
-
-		/* Send the packet to the parent */
-		call AMSend.send(parentId, &packet, sizeof(radio_count_msg_t) );
+		return (float)((float) randVal / (float) maxRand);
 	}
 
-	/****************************************************************************************
-	* 			THE FOLLOWING ARE SIMPLE, HELPER FUNCTIONS	 		*
-	*****************************************************************************************/
+	/* Selects randomly an integer in the range [0, n) */
+	uint16_t randomInt( uint16_t n ){
+
+		/* Get a random uint16_t value and do modulo n */
+		uint16_t randVal;
+		uint16_t maxRand = 0xFFFF;
+
+		randVal = call Random.rand16() & maxRand;
+
+		return ( randVal % n );
+	}
+
+	/**************************** **************************** ****************************/
+	/**************************** **************************** ****************************/
+	/**************************** **************************** ****************************/
+
+	
+
+	/***************************** ***************************** *****************************/
+	/***************************** FUNCTIONS FOR OUTL. DETECTION *****************************/
+	/***************************** ***************************** *****************************/
 
 	/** Returns the variance at the idx-th position */
 	float getVariance( uint8_t idx ){
@@ -666,12 +760,6 @@ implementation{
 		}
 	}
 
-	/* Selects randomly an integer in the range [0, n) */
-	uint16_t randomInt(uint16_t n){
-
-		return 0;
-	}
-
     /* the integral for the Epanechnikov function */
     double IFEpanech(double x) {
         double res;
@@ -684,5 +772,9 @@ implementation{
 
         return (res);
     }
+
+	/***************************** ***************************** *****************************/
+	/***************************** ***************************** *****************************/
+	/***************************** ***************************** *****************************/
 }
 

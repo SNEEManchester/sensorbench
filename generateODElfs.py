@@ -1,5 +1,5 @@
 import re, getopt, logging, sys, os, string, UtilLib, CSVLib, AvroraLib, networkLib, shutil
-import SNEEMediator, SBLib, equivRuns
+import SNEEMediator, SBLib, equivRuns, ODMediator
 
 optScenarioDir = os.getcwd() + os.sep + "scenarios"
 optVersion = 1
@@ -125,15 +125,22 @@ def generateElfsForExperimentalSetup(exprAttr, exprAttrCols):
 	xVals = exprAttr[xValAttr+"s"].split(";")
 	xValLabels = exprAttr["XvalLabels"].split(";")
 
+	#
+	#Addidion by lebi: ODx Platform supports only "OD" task (check the ODMediator as well).
+	#
+
 	for task in tasks:
 		for (xVal,xValLabel) in zip(xVals,xValLabels):
 			for instance in range(1,optNumInstances+1):
+
+				plat = "OD" + str(optVersion);
+				if (not ODMediator.taskSupported(task)):
+					continue;
+
 				exprAttr["Instance"] = instance
-				print "\n**********Experiment="+exprAttr['Experiment']+ "task="+task+" x="+xVal + " xLabel="+xValLabel+" instance="+str(exprAttr["Instance"])	
+				print "\n**********Experiment="+exprAttr['Experiment']+ " task="+task+" x="+xVal + " xLabel="+xValLabel+" instance="+str(exprAttr["Instance"])	
 
-
-
-				runAttr = initRunAttr(exprAttr, xVal, xValLabel, xValAttr, instance, "OD" + optVersion, task)
+				runAttr = initRunAttr(exprAttr, xVal, xValLabel, xValAttr, instance, plat, task)
 				runOutputDir = SBLib.getRunOutputDir(runAttr)
 				#Does not create an Avrora Job if there is another run that produces
 				#equivalent results to this one
@@ -220,9 +227,6 @@ def generateSettingFiles(elfOutputFolder, runAttr):
 	#define min(a,b) (((a) < (b)) ? (a) : (b))
 #endif
 
-/* The dimensions that we currently have */
-#define DIMS 1
-
 #define WINDOW_SIZE 10000	//The size of the window for the query
 #define SLIDE_SIZE 10000	//How much the window slides for the new set of tuples
 #define SAMPLING_FREQUENCY %s	// sampling frequency in milliseconds
@@ -263,22 +267,6 @@ enum {
 	//AM_OSCILLOSCOPE = 0x93
 	AM_RADIO_COUNT_MSG = 0x93,
 };
-
-/* The current maximum number of readings that can be sent.
-* The (default) maximum number of payload bytes is 28. This gives us up to 26 bytes
-* of readings to be transmitted. This can be interpreted as 13 readings (each reading is
-* a uint16_t value). We can have 5 readings without a problem */
-/* 
-* In this case, the size is fixed and contains 5 numbers: the four sum and their count.
-* Other than that, we only care about who sent those readings. Values are currently uint32_t
-* because they are summations, and may go way too high
-*
-*/
-typedef nx_struct radio_count_msg {
-	nx_uint8_t id;				//id of the sending mote
-	//The actual readings themselves. Contains ALL readings that have been marked as outliers
-	nx_uint8_t readings[DIMS * sizeof(float)];
-} radio_count_msg_t;
 
 #endif''' % (int(runAttr["AcquisitionRate"])*1000))
 # * 1000 to convert between seconds to microseconds, as the setup file needs to be in microseconds
@@ -336,7 +324,6 @@ def generateNodeHeaderFiles(tempSneeFolder, elfOutputFolder, experiemntNameFolde
 /* Include the generic configuration of motes */
 #include "D3Gen.h"
 
-#define IS_ROOT
 #define PARENT_NODE_ID 0
 #define N_NODES %s''' % (numberofNodesInDeployment))
 			outputFile.close()
@@ -347,6 +334,10 @@ def copyCorrectDataFilesFromStore(runOutputDir):
 	shutil.copy(optSourceRootDir+os.sep+"D3C.nc", runOutputDir)
 	shutil.copy(optSourceRootDir+os.sep+"Makefile", runOutputDir)
 	shutil.copy(optSourceRootDir+os.sep+"AvroraPrint.h", runOutputDir)
+
+	#Copy the communication queue - lebi
+	shutil.copy(optSourceRootDir+os.sep+"CommQueue.h", runOutputDir)
+	shutil.copy(optSourceRootDir+os.sep+"CommQueue.c", runOutputDir)
 	if(optVersion ==1):
 		shutil.copy(optSourceRootDir+os.sep+"Debug.h", runOutputDir)
 

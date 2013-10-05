@@ -300,7 +300,7 @@ def getAvroraCommandString(runAttr, avroraElfDir):
 	topologyStr = "-topology=static -topology-file="+runAttr['AvroraTopologyFilename']
 
         #NB: removed serial monitor, not needed as using c-print
-	commandStr = "java avrora.Main -mcu=mts300 -platform=micaz -simulation=sensor-network %s -seconds=%d -monitors=leds,packet,energy,c-print -ports=0:0:2390 -random-seed=1 -sensor-data=%s -report-seconds -colors=false -nodecount=%s  %s" % (topologyStr, simDuration, sensorDataString, nodeCountString, elfString)
+	commandStr = "avrora.Main -mcu=mts300 -platform=micaz -simulation=sensor-network %s -seconds=%d -monitors=leds,packet,energy,c-print -ports=0:0:2390 -random-seed=1 -sensor-data=%s -report-seconds -colors=false -nodecount=%s  %s" % (topologyStr, simDuration, sensorDataString, nodeCountString, elfString)
 	
 	return commandStr
 

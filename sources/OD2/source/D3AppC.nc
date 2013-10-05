@@ -43,6 +43,8 @@
 
 #include "D3.h"
 
+#include "CommQueue.h"
+
 configuration D3AppC {
 } 
 
@@ -61,6 +63,7 @@ implementation {
 	components new AMSenderC(AM_RADIO_COUNT_MSG);
 	components new AMReceiverC(AM_RADIO_COUNT_MSG);
 	components ActiveMessageC;
+	components CC2420ActiveMessageC;
 
 
 	/* To begin execution */
@@ -73,14 +76,17 @@ implementation {
 	D3C.ThermalSensor -> Sensor;
 
 	/* To receive data from radio transmission */
-	D3C.Receive -> AMReceiverC;
+	D3C.RadioReceive -> AMReceiverC;
 
 	/* To send data over the radio */
-	D3C.AMSend -> AMSenderC;
+	D3C.RadioSend -> AMSenderC;
 
 	/* Don't really know the practical use of these two */
-	D3C.AMControl -> ActiveMessageC;
+	D3C.RadioControl -> ActiveMessageC;
 	D3C.Packet -> AMSenderC;
+
+	/* For more reliable communication */
+	D3C.PacketLink -> CC2420ActiveMessageC;
 
 	D3C.Random->RandomC;
 }

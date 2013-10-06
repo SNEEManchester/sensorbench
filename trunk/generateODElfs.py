@@ -283,6 +283,7 @@ def generateNodeHeaderFiles(tempSneeFolder, elfOutputFolder, experiemntNameFolde
 			bits = line.split("\"")
 			child = bits[1]
 			parent = bits[3]
+			numberofNodesInDeployment = runAttr['NetworkSize']
 			outputFile = open(elfOutputFolder+os.sep+"D3Node"+child+".h", "w")
 			outputFile.write('''/* * This is the header file with default configuration for a ROOT node, that runs the D3
 * distributed outlier detection algorithm. Most likely this is a basestation node.
@@ -302,9 +303,9 @@ def generateNodeHeaderFiles(tempSneeFolder, elfOutputFolder, experiemntNameFolde
 /* Include the generic configuration of motes */
 #include "D3Gen.h"
 
-#define PARENT_NODE_ID %s''' % (parent))
+#define N_NODES %(1)s 
+#define PARENT_NODE_ID %(2)s''' %{"1": numberofNodesInDeployment, "2": parent} )
 			outputFile.close()
-			numberofNodesInDeployment = runAttr['NetworkSize']
 			outputFile = open(elfOutputFolder+os.sep+"D3Node0.h", "w")
 			outputFile.write('''/* * This is the header file with default configuration for a ROOT node, that runs the D3
 * distributed outlier detection algorithm. Most likely this is a basestation node.
@@ -324,6 +325,7 @@ def generateNodeHeaderFiles(tempSneeFolder, elfOutputFolder, experiemntNameFolde
 /* Include the generic configuration of motes */
 #include "D3Gen.h"
 
+#define IS_ROOT
 #define PARENT_NODE_ID 0
 #define N_NODES %s''' % (numberofNodesInDeployment))
 			outputFile.close()

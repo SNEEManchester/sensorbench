@@ -27,21 +27,25 @@
  * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  *
- * @date:	3 March 2011
- * @revision: 	1.1
+ * @date:	5 Oct 2013
+ * @revision: 	1.3
  * @author: 	George Valkanas ( http://www.di.uoa.gr/~gvalk , gvalk@di.uoa.gr )
  * 		National and Kapodistrian University of Athens,
  * 		Dept. Informatics & Telecommunications
  *		Knowledge Data Discovery Group ( http://kddlab.di.uoa.gr )
  *
- * This is the wiring file for the D3 outlier detection algorithm. For more information
- * on the algorithm, see
+ * This is the wiring file for the D3 outlier detection algorithm, when we perform global outlier 
+ * detection. This means that everything is propagated to the sink node, which will search for
+ * outlying values in a global sense. 
+ * 
+ * For more information on the D3 algorithm, see
  *	Sharmila Subramaniam, Themis Palpanas, Dimitris Papadopoulos, Vana Kalogeraki, Dimitrios Gunopulos:
  *	Online Outlier Detection in Sensor Data Using Non-Parametric Models. VLDB, 2006
- *
 */
 
 #include "D3.h"
+
+#include "CommQueue.h"
 
 configuration D3AppC {
 } 
@@ -61,6 +65,7 @@ implementation {
 	components new AMSenderC(AM_RADIO_COUNT_MSG);
 	components new AMReceiverC(AM_RADIO_COUNT_MSG);
 	components ActiveMessageC;
+	components CC2420ActiveMessageC;
 
 
 	/* To begin execution */
@@ -73,12 +78,17 @@ implementation {
 	D3C.ThermalSensor -> Sensor;
 
 	/* To receive data from radio transmission */
-	D3C.Receive -> AMReceiverC;
+	D3C.RadioReceive -> AMReceiverC;
 
 	/* To send data over the radio */
-	D3C.AMSend -> AMSenderC;
-	D3C.AMControl -> ActiveMessageC;
-	D3C.Packet -> AMSenderC;
+	D3C.RadioSend -> AMSenderC;
+
+	/* Don't really know the practical use of these two */
+	D3C.RadioControl -> ActiveMessageC;
+
+	/* For more reliable communication */
+	D3C.PacketLink -> CC2420ActiveMessageC;
+	D3C.PacketAcknowledgements -> AMSenderC;
 
 	D3C.Random->RandomC;
 }

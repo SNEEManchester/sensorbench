@@ -18,8 +18,8 @@
 * We assume that the network tree is rooted at TOS_NODE_ID = 0
 *
 *
-* @date:	3 March 2011
-* @revision: 	1.0
+* @date:	5 October 2013
+* @revision: 	1.3
 * @author: 	George Valkanas ( http://www.di.uoa.gr/~gvalk , gvalk@di.uoa.gr )
 * 		National and Kapodistrian University of Athens,
 * 		Dept. Informatics & Telecommunications
@@ -39,6 +39,8 @@
 #include "Debug.h"	// For debugging purposes
 #include "D3.h"
 
+#include "CommQueue.h"
+
 
 /**
 * This is an implementation of a mote that reads values and builds a Linear Regression
@@ -53,17 +55,19 @@ module D3C @safe() {
 	* else is used to send / receive information over the network */
 	uses {
 		interface Boot;			/* This is needed to boot up the system */
-		interface Timer<TMilli>;	/* Required interface for timer alarms and getting the time of a reading */
+		interface Timer<TMilli> as Timer;	/* Required interface for timer alarms and getting the time of a reading */
 
 		/* Each node is equipped with two sensors: a temperature and a moisture sensor.
 		* In our example, moisture is variable X and temperature is variable Y */
 		interface Read<uint16_t> as ThermalSensor;
 
 		/* Those interfaces are necessary for communication */
-		interface AMSend;
-		interface Receive;
-		interface SplitControl as AMControl;
-		interface Packet;
+		interface AMSend as RadioSend;
+		interface Receive as RadioReceive;
+		interface SplitControl as RadioControl;
+
+		interface PacketLink;	/* For more reliable sending */
+		interface PacketAcknowledgements; /* For requesting the ACK of a package */
 
 		/* To create a random sample from the input data */
 		interface Random;
@@ -86,7 +90,7 @@ implementation{
 
 	uint32_t startTime;
 
-	/* Variables necessary to compute the sample size */
+	/* Variables necessary to compute the standard deviation */
 	float sum_x[DIMS];
 	float sum_xx[DIMS];
 
@@ -107,16 +111,20 @@ implementation{
 	/************************************************************************
 	*			VARIABLES USED TO COMMUNICATE WITH ONE ANOTHER				* 
 	 ************************************************************************/
+	message_t packet;
+
 	/* The id of the parent node of this mote */
 	uint8_t parentId = PARENT_NODE_ID;
 
-	/* It may be better to have one packet for receiving messages and one for outgoing */
-	message_t packet;
-	radio_count_msg_t lclPayload;	/* local copy of what will be sent */
+	/* This method is used to send the new point to the parent as an outlier */
+	int32_t seqNo;
+	comm_queue_t* lastCommMsg;
+	void task sendData();
 
 	/****************************************************************************************
 	* 		CUSTOM COMMAND DECLARATION. Both Components and Tasks			*
 	*****************************************************************************************/
+	float percent();
 	uint16_t randomInt(uint16_t n);		/* Returns a new random int number */
 	double IFEpanech(double x);	/* Returns the Integral of the Epanechnikov value of number x */
 	double IEpanech(float* newPnt, float* smpPnt);
@@ -131,11 +139,12 @@ implementation{
 	bool isOutlier( float* tuple );
 
 	/* This method is used to send the new point to the parent as an outlier */
-	void sendOutlier( float* tuple );
+	void sendOutlier( uint16_t* tuple );
 
 	/* Clears the sample from all of the tuples that should be evicted
 	 (actually there is only one such tuple each time the function is called) */
 	void evictFromSample();
+
 
 	void replaceInSample( int16_t position );
 
@@ -156,30 +165,35 @@ implementation{
 
 	double computePointMass(float* point);
 
-	/* Updates the model with the given tuple. The tuple is not normalized */
+	/* Task to update the model used internally */
 	task void updateModel( );
 
-	void updateModel( float* normPnt );
+	/* Updates the model with the given tuple. The tuple has been normalized */
+	void updateModelT( uint16_t* point, float* normPnt );
 
 	float getVariance( uint8_t idx );
 	void updateVarianceEstimation( float* prevTpl, float* curTpl );
 
+	/* In the global D3 case, the root will have to do the following: Maintain an array of the indexes where all of the motes are held */
+	int32_t moteSeqNo[N_NODES];
+
 	#ifdef IS_ROOT
 
-	uint8_t pendingMotes = N_NODES;
+	bool detecting = FALSE;
+	task void detect();
 
-	/* In the global D3 case, the root will have to do the following: Maintain an array of the indexes where all of the motes are held */
-	bool moteSent[N_NODES];
+	/* Id of the last mote from which we received the data */
+	uint16_t lastMoteId;
 
-	/* It will also hold all of the tuples that were sent from all motes. T */
-	//float sample[N_NODES][SAMPLE_SIZE][DIMS];
+	/* Information regarding the mote from which we received information */
+	bool moteRcv[N_NODES];
+
+	/* The last reading for each mote */
+	uint16_t moteRead[N_NODES][DIMS];
 	#endif
 
 
 	/* Waste CPU cycles, to be able to print after that */
-	#if DEBUG
-	void printTuple( float* values );
-
 	uint16_t wasteCPU(){
 		uint8_t i;
 		uint32_t val = 0;
@@ -191,24 +205,6 @@ implementation{
 		return (uint16_t)(val + i);
 	}
 
-	/* Prints the readings from a tuple */
-	void printTuple( float* values ){
-
-		uint8_t dimItr;
-
-		printStr("VALUES");
-		wasteCPU();
-
-		for ( dimItr = 0; dimItr < DIMS; dimItr++ ){
-
-			printFloat( values[dimItr] );
-			wasteCPU();
-		}
-	}
-
-	#endif
-
-
 	/****************************************************************************************
 	* 		From this point on, we have the methods that will be called		*
 	*****************************************************************************************/
@@ -216,51 +212,53 @@ implementation{
  	/* Event fired once the application is started */
 	event void Boot.booted() {
 
+		uint8_t i = 0;
+
 		/* The lclPayload is always sent by this ID, so we can simply use the TOS_NODE_ID */
-		lclPayload.id = TOS_NODE_ID;
 		sampleSize = 0;
 		oldestTupleIdx = 0;
 		memset(used, 0, sizeof(bool) * SAMPLE_SIZE);
 
+		/* Initialize informatino for the communication queue. 1st tuple ever for this node,
+		* there is no previous communication message */
+		seqNo = 0;
+		lastCommMsg = 0x0;
+
+		for ( ; i < N_NODES; i++ )
+			moteSeqNo[i] = 0;
+
 		/* If you are the ROOT, initialize the indexes */
 		#ifdef IS_ROOT
 		{
-			uint8_t i = 0;
-			for ( ; i < N_NODES; i++ )
-				moteSent[i] = FALSE;
+			detecting = FALSE;
 		}
 		#endif
 
 		/* If the message size is too big for the payload, we just ignore it */
-		if ( sizeof(radio_count_msg_t) > call AMSend.maxPayloadLength() )
+		if ( sizeof( comm_queue_t ) > call RadioSend.maxPayloadLength() )
 			printInt16(RADIO_MSG_TOO_LARGE);
 
 		/* Initialize the radio controller of this mote */
-		if (call AMControl.start() != SUCCESS)
+		if (call RadioControl.start() != SUCCESS)
 			printInt16(AM_CONTROL_NOT_STARTED);
 	}
 
-	/* 
-	* WHY DO I NEED TO START THE AM Controler? WHAT IS THE AMControl???
-	* ANS: The AMController is required to start / stop the radio transmitter.
-	*
-	* When the AMControl has started (the radio is ready for use) , I need to
+	/* When the AMControl has started (the radio is ready for use) , I need to
 	* start a timer, and anything else I was doing in the booted() method earlier. */
-	event void AMControl.startDone(error_t err) {
+	event void RadioControl.startDone(error_t err) {
 
 		/* If the AMControl was started successfully, we simply need to begin sensing */
 		if (err == SUCCESS){
 
-			#ifndef IS_ROOT
-			/* Start a timer, provided this is not the sink node (tree root) */
-			call Timer.startOneShot(1);
-			#endif
+			/* Start a timer for sensing nodes, provided this is not the sink node (tree root) */
+			if ( TOS_NODE_ID != 0 )
+				call Timer.startOneShot(1);
 		}else
-			call AMControl.start();
+			call RadioControl.start();
 	}
 
 	/* Event occuring when the AM controller is requested to stop */
-	event void AMControl.stopDone(error_t err) {}
+	event void RadioControl.stopDone(error_t err) {}
 
 
 	/* Method invoked when the timer event fires. The action we take depends on whether we 
@@ -275,6 +273,7 @@ implementation{
 		post senseEnvironment();
 	}
 
+
 	/* D3 is an outlier detection algorithm, therefore, sensing and sending are by definition decoupled
 	* tasks. Every time the senseEnvironment() task runs, we want to proceed with the next bfrCntr item
 	* as this is where the new value will be stored.
@@ -286,19 +285,20 @@ implementation{
 		/* If all of the dimensions have been read */
 		if ( dimIdx == DIMS ){
 
-			uint8_t i = 0;
-			float normT[DIMS];	/* here we store the normalized values */
+			uint32_t curTm;	/* an indication of the current time */
+			int32_t remaining; 
 
-			/* Normalize the values so that they are in the range [0,1] as they should.
-			* XXX Talk with Alan to see how the normT is generated */
-			for ( ; i < DIMS; i++ )
-				normT[i] = (float)(lastTuple[i] - MIN_VAL) / (float)(MAX_VAL - MIN_VAL);
+			/* In the Global D3 model, we just send the data to the sink */
+			sendOutlier( lastTuple );
 
-			/* In the Global D3 model, the tuple is sent upwards until it reaches the sink */
-			sendOutlier( normT );
-//			post updateModel();
+			/* And we reschedule the next sampling */
+			curTm = call Timer.getNow();
+			remaining = SAMPLING_FREQUENCY + epochStartTime - curTm;
+			if ( remaining <= 0 )
+				remaining = 1;
+			call Timer.startOneShot(remaining);
+
 			return;
-
 		}else{
 
 			/* Unless we have read all dimensions of a single tuple, keep calling the thermal sensor.*/
@@ -337,33 +337,236 @@ implementation{
 		}
 	}
 
-	/* This method is used to update the D3 model. The D3 model runs the basic
-	* task of identifying the outliers */
-	task void updateModel( ){
 
-		uint8_t i = 0;		/* a simple iterator */
-		uint32_t curTm;		/* an indication of the current time */
-		int32_t remaining;	/* remaining time until we sense the next batch */
-		float normT[DIMS];	/* here we store the normalized values */
+	/***************************** ***************************** *****************************/
+	/***************************** FUNCTIONS 4 NTW COMMUNICATION *****************************/
+	/***************************** ***************************** *****************************/
 
-		/* Normalize the values so that they are in the range [0,1] as they should */
-		for ( i = 0; i < DIMS; i++ )
-			normT[i] = (float)(lastTuple[i] - MIN_VAL) / (float)(MAX_VAL - MIN_VAL);
+	/* This method enqueues the given tuple for sending through the network. The tuple has
+	* been characterized as an outlier, and we need to send it across the network. */
+	void sendOutlier( uint16_t* tuple ){
 
-		updateModel( normT );
+		/* Create a new item that we are going to fill in and enqueue it for sending in the network */
+		comm_queue_t msg;
 
-		clock++;
+		/* Fill in the details of the message that we want */
+		msg.id = TOS_NODE_ID;
+		msg.seqNo = seqNo;
+		memcpy( msg.data, tuple, DATA_SIZE );
 
-		curTm = call Timer.getNow();
-		remaining = SAMPLING_FREQUENCY + epochStartTime - curTm;
-		if ( remaining <= 0 )
-			remaining = 1;
-		call Timer.startOneShot(remaining);
+		/* Enqueue it for sending */
+		if ( enqueue( msg ) == QUEUE_SUCCESS ){
+			/* Item enqueued successfully. Post the sending task */
+			post sendData();
+		}
+
+		seqNo++;
 	}
 
 
+	/* Task that performs the actual sending of a packet from the communication queue */
+	void task sendData(){
+
+		error_t errVal;
+
+		/* Method called for sending. If no previous message exists, dequeue one */
+		if ( lastCommMsg == 0x0 )
+			lastCommMsg = dequeue();
+
+		/* The dequeued value is the actual payload (the information we care about) */
+		memcpy( call RadioSend.getPayload( &packet, sizeof( comm_queue_t ) ), lastCommMsg, sizeof( comm_queue_t ) );
+
+		/* Request synchronous acknowledgement. If we can not set that now, repost the task */
+		errVal = call PacketAcknowledgements.requestAck( &packet );
+		if ( errVal == EBUSY  ){
+			post sendData();
+			return;
+		}
+
+		/* Send the packet across the network */
+		errVal = call RadioSend.send( parentId, &packet, sizeof( comm_queue_t ) );
+		if ( errVal == FAIL ){
+
+			/* Failure to send. Can't proceed */
+			char dbg_msg[30];
+			sprintf( dbg_msg, "NETW SND FAIL (%d)", (int)TOS_NODE_ID );
+			printStr(dbg_msg);
+
+			call RadioSend.cancel( &packet );
+
+		}else if ( errVal != SUCCESS ){
+
+			/* Sending did not succeed but we can retry. repost the task */
+			post sendData();
+		}
+	}
+
+	/** CODE EXECUTED (APPARENTLY) WHEN A NEW MESSAGE IS SENT OVER THE NETWORK */
+	event void RadioSend.sendDone(message_t* bufPtr, error_t error) {
+
+		uint8_t queueSize;
+		bool resend = FALSE;
+
+		/* Get the size of the queue */
+		queueSize = queue_size();
+
+		/* Check if we had a problem during sending */
+		if ( error == EBUSY || error == ERETRY || error == ENOACK ){
+
+			resend = TRUE;
+
+		}else if ( error == EOFF || error == ESIZE || error == ENOMEM ){
+
+			char dbg_msg[30];
+			sprintf(dbg_msg, "NETW (%d) SVRE: %d", (int)TOS_NODE_ID, (int)error );
+			printStr(dbg_msg);
+
+		}else{
+
+			if ( call PacketAcknowledgements.wasAcked( bufPtr ) == FALSE ){
+
+				/* If the packet has not been acknowledged, resend it */
+				resend = TRUE;
+
+			}else{
+
+				/* Message sent and ack'ed. Reset to NULL, so that we send another msg if needed. */
+				lastCommMsg = 0x0;
+	
+				if ( queueSize != 0 ){
+	
+					/* If the last packet has been delivered (and ack'ed), but there are pending items
+					in the communication queue, send these as well. Reset the latestMessage */
+					resend = TRUE;
+				}
+			}
+		}
+		
+		/* If we must resend, post the sendData task again */
+		if ( resend == TRUE )
+			post sendData();
+	}
+
+
+	/*
+	* Event task executed when a message is received from the network.
+	* In our case, received messages are forwarded up the propagation chain, until they reach
+	* the sink / gateway node. No local computations are performed in this setting.
+	*
+	* bufPtr is a pointer to the message that has just been received.
+	* payload is a pointer to the actual information. It should be equal to getting the payload from the message itself
+	* len is the length of the payload (data) */
+	event message_t* RadioReceive.receive(message_t* bufPtr, void* data, uint8_t len) {
+
+		/* If the sequence number has been superceded, ignore */
+		comm_queue_t* rcm = (comm_queue_t*)data;
+
+		if ( rcm->seqNo < moteSeqNo[ rcm->id ] )
+			return bufPtr;
+
+		/* Only a parent node can receive messages in the D3 context. All received messages signify outliers
+		* (at the moment) */
+		#ifndef IS_ROOT
+		{
+			/* This is not the ROOT node. Any data received here are not destined for this node.
+			* Enqueue the received message for communication up the routing tree */
+			comm_queue_t msg;
+
+			memcpy( &msg, rcm, sizeof( comm_queue_t ) );
+
+			/* If the message has been successfully enqueued, post the sending task */
+			if ( enqueue( msg ) == QUEUE_SUCCESS )
+				post sendData();
+		} 
+		#else
+		{
+			/* If we already have a value from that node, skip it (useful for high-speed sending).
+			* Otherwise, copy its values */
+			if ( moteRcv[rcm->id] == FALSE ){
+
+				moteRcv[rcm->id] = TRUE;
+				memcpy( moteRead[rcm->id], rcm->data, DATA_SIZE );
+
+				/* post a task to update the model that the sink node uses */
+				post updateModel();
+			}
+		}
+		#endif
+
+		/* The next tuple we will be expecting should have a higher sequence number than the
+		* one we already saw. This way, we avoid reporting duplicate values */
+		moteSeqNo[ rcm->id ] = 1 + rcm->seqNo;
+
+		/* In any case, the buffer pointer is returned */
+		return bufPtr;
+	}
+
+
+
+
+	/* Task to update the model. Note that this is only used by the SINK node in this case */
+	task void updateModel( ){
+
+		/* Code only executed by the root node */
+		#ifdef IS_ROOT
+
+		uint8_t i = 0;
+
+		/* If the method is already detecting, we can not proceed */
+		if ( detecting )
+			return;
+
+		/* Find the first item that has been updated */
+		for ( ; i < N_NODES; i++ )
+			if ( moteRcv[i] == TRUE )
+				break;
+
+		/* If no such mote exists, return */
+		if ( i == N_NODES )
+			return;
+
+		/* The id of the mote under consideration is the i-th one */
+		lastMoteId = i;
+
+		/* Get the tuple from that node */
+		memcpy( lastTuple, moteRead[i], DATA_SIZE );
+
+		/* Requesting to detect a value. Post a task that we want to check that tuple as an outlier */
+		detecting = TRUE;
+		post detect();
+
+		/* The value of that mote can be changed */
+		moteRcv[i] = FALSE;
+
+		#endif
+	}
+
+
+	#ifdef IS_ROOT
+	task void detect(){
+
+		/* The lastTuple contains the values that we want to check as an outlier */
+		uint8_t i;
+		float normT[DIMS];
+
+		/* Normalize the values so that they are in the range [0,1] (kernels require that) */
+		for ( i = 0; i < DIMS; i++ )
+			normT[i] = (float)(lastTuple[i] - MIN_VAL) / (float)(MAX_VAL - MIN_VAL);
+
+		/* Update the global model for outlier detection */
+		updateModelT( lastTuple, normT );
+
+		/* Detecting has ended */
+		detecting = FALSE;
+
+		/* Ask to update the model again, with the next tuple */
+		post updateModel();
+	}
+	#endif
+
+
 	/* Updates the model with the provided normalized tuple */
-	void updateModel( float* normPnt ){
+	void updateModelT( uint16_t* point, float* normPnt ){
 
 		/* Unless we have reached the maximum window size, the window can expand */
 		if ( windowSize < MAX_WINDOW_SIZE )
@@ -382,18 +585,17 @@ implementation{
 
 		if ( isOutlier( normPnt ) ){
 
-			/* The tuple is an outlier. DELIVER it */
-    		char dbg_msg[30];
-			uint16_t actVal[DIMS];	/* here we store the normalized values */
-			uint8_t i = 0;
+			/* The following code will only be executed by the ROOT node.
+			* Makes the implementation simpler. Compile errors occur otherwise, although this method
+			* will never be invoked by an intermediate node. */
+			#ifdef IS_ROOT
 
-			/* De-normalize the values so that they are in the range [0,1] as they should */
-			for ( ; i < DIMS; i++ )
-				actVal[i] = MIN_VAL + outlier[i] * (float)(MAX_VAL - MIN_VAL);
+				/* The tuple is an outlier. DELIVER it */
+	    		char dbg_msg[30];
+				sprintf(dbg_msg, "DELIVER(id=%d,n=%d)", lastMoteId, point[0]);
+				printStr(dbg_msg);
 
-			//Ixent added this for SenseBench
-			sprintf(dbg_msg, "DELIVER(id=%d,n=%d)",sender, actVal[0]);
-			printStr(dbg_msg);
+			#endif
 		}
 	}
 
@@ -460,14 +662,11 @@ implementation{
 	/* Whether the tuple should be inserted in the sample */
 	bool shouldInsert(){
 
-		/* Check if we will include the point in the random sample. Use 8 bits, to better control what is happening.
-		* FIXME: Maybe, we should revert to 16 bits later */
-		uint16_t randVal;
-		uint16_t maxRand = 0xFFFF;
+		/* Get a random integer value */
+		float val = percent();
 
-		randVal = call Random.rand16() & maxRand;
-
-		return ( ((float) randVal / (float) maxRand) <= SAMPLE_PRCNT );
+		/* Turn that in the random value */
+		return ( val <= SAMPLE_PRCNT );
 	}
 
 	/** Returns the next tuple that should be evicted */
@@ -492,7 +691,7 @@ implementation{
 			with a NULL value for the first argument, but also increase the sample! */
 			updateVarianceEstimation( NULL, t );
 			sampleSize++;
-		}
+		}/home/lebiathan/Programming/helios/workspaces/workspace-ssg4e/dats-bob/SenseBench/output/06Oct2013-20-59-51/avroraJobs/exp1a-OD1-x9-OD-1
 
 		/* Store the given value and the timestamp that we encountered the tuple */
 		memcpy(sample + idx, t, sizeof(float) * DIMS);
@@ -518,6 +717,9 @@ implementation{
 		return vicCnt < OUTLIER_THRESHOLD;
 	}
 
+
+	/* Computes the number of points that are in the vicinity of the provided point.
+	* The vicinity count is an estimation, based on the Kernel function. */
 	uint16_t vicinityCount( float* newPnt ) {
 
 		double pntMass;
@@ -529,13 +731,13 @@ implementation{
 		return (uint16_t)ceil(windowSize * pntMass / (double)sampleSize);
 	}
 
+
 	/** Returns the value of bandwidth according to Scott's rule
-	* (as was the case in t			/* In case the mote is the ROOT of the tree, we do nothing.
-			* Otherwise, we start a timer */
-	he paper) */
+	* (as was the case in the paper) */
 	double scottsRule( int16_t idx ) {
 		return sqrt5 * getVariance( idx ) * pow( sampleSize, -1.0 / (float) (DIMS + 4) );
 	}
+
 
 	/** Computes the point mass around the given point */
 	double computePointMass(float* point) {
@@ -551,6 +753,7 @@ implementation{
 
 		return sum;
 	}
+
 
 	double IEpanech(float* newPnt, float* smpPnt){
 
@@ -599,89 +802,6 @@ implementation{
 		return product;
 	}
 
-	/** CODE EXECUTED (APPARENTLY) WHEN A NEW MESSAGE IS SENT OVER THE NETWORK */
-	event void AMSend.sendDone(message_t* bufPtr, error_t error) {
-
-		if ( error == SUCCESS ){
-
-			/* The sent message is the one that this node sent. In that case, queue another sensing task */
-			if ( &packet == bufPtr ){
-
-			//	uint32_t curTm;		/* an indication of the current time */
-			//	int32_t remaining;
-
-			//	curTm = call Timer.getNow();
-			//	remaining = SAMPLING_FREQUENCY + epochStartTime - curTm;
-				//if ( remaining <= 0 )
-				//	remaining = 1;
-			//	call Timer.startOneShot( remaining );
-			}
-		}else{
-			printStr("SEND FAILED");
-		}
-	}
-
-
-	/************************************************************************************************
-	* 		The following is code required for communication between motes			*
-	*************************************************************************************************/
-
-	/* CODE EXECUTED (APPARENTLY) WHEN A MESSAGE IS RECEIVED FROM THE NETWORK
-	*
-	* bufPtr is a pointer to the message that has just been received.
-	* payload is a pointer to the actual information. It should be equal to getting the payload from the message itself
-	* len is the length of the payload (data) */
-	event message_t* Receive.receive(message_t* bufPtr, void* data, uint8_t len) {
-
-		/* Only a parent node can receive messages in the D3 context. All received messages signify outliers
-		* (at the moment) */
-		#ifndef IS_ROOT
-			/* Any intermediate node will simply send the reading upwards (to its parent node) */
-			call AMSend.send(parentId, bufPtr, len);
-		#else
-		{
-
-			/* In the OD1 case, we choose global outliers. When new tuples arrive from the network,
-			* we update our model and spit out the ones that are outliers */
-			float outlier[DIMS];
-
-			/* Such messages are always (and only) sent from child nodes. Get the child node id */
-			radio_count_msg_t* rcm = (radio_count_msg_t*)data;
-			uint8_t sender = rcm->id;
-
-			memcpy(outlier, rcm->readings, sizeof(float) * DIMS);
-
-			{
-				/* Update the global model for outlier detection */
-				updateModel( outlier );
-			}
-			
-		}
-		#endif
-				
-		/* In any case, the buffer pointer is returned */
-		return bufPtr;
-	}
-
-
-	/****************************************************************************************
-	* 				LOCALLY CREATED TASKS	 				*
-	*****************************************************************************************/
-
-
-	/* This method is used to send the latest received point to the parent of this node, as an outlier.
-	* The parent node only expects outliers, so the application logic does not require to do much! */
-	void sendOutlier( float* tuple ){
-
-		/* Copy the new point values to the buffer that will be sent */
-		memcpy( lclPayload.readings, tuple, DIMS * sizeof(float) );
-
-		/* Copy the item to the payload of the packet that we'll send */
-		memcpy( call AMSend.getPayload(&packet, sizeof(radio_count_msg_t)), &lclPayload, sizeof(radio_count_msg_t) );
-
-		/* Send the packet to the parent */
-		call AMSend.send(parentId, &packet, sizeof(radio_count_msg_t) );
-	}
 
 	/****************************************************************************************
 	* 			THE FOLLOWING ARE SIMPLE, HELPER FUNCTIONS	 		*
@@ -710,8 +830,8 @@ implementation{
 			uint8_t i = 0;
 
 			for ( ; i < DIMS; i++ ){
-		            sum_x[i] -= prevTpl[i];
-		            sum_xx[i] -= prevTpl[i] * prevTpl[i];
+				sum_x[i] -= prevTpl[i];
+				sum_xx[i] -= prevTpl[i] * prevTpl[i];
 			}
 		}
 		
@@ -719,17 +839,12 @@ implementation{
 			uint8_t i = 0;
 
 			for ( ; i < DIMS; i++ ){
-		            sum_x[i] += curTpl[i];
-		            sum_xx[i] += curTpl[i] * curTpl[i];
+				sum_x[i] += curTpl[i];
+				sum_xx[i] += curTpl[i] * curTpl[i];
 			}
 		}
 	}
 
-	/* Selects randomly an integer in the range [0, n) */
-	uint16_t randomInt(uint16_t n){
-		return call Random.rand16() % n;
-	}
-	
 	/* the integral for the Epanechnikov function */
 	double IFEpanech(double x) {
 		double res;
@@ -742,5 +857,35 @@ implementation{
 
 		return (res);
 	}
+
+
+	/**************************** **************************** ****************************/
+	/**************************** SIMPLE HELPER MATH FUNCTIONS ****************************/
+	/**************************** **************************** ****************************/
+
+	/* Returns a randomly generated uint16_t value. */
+	float percent( ){
+
+		uint16_t maxRand = 0xFFFF;
+		uint16_t randVal = randomInt( maxRand );
+
+		return (float)((float) randVal / (float) maxRand);
+	}
+
+	/* Selects randomly an integer in the range [0, n) */
+	uint16_t randomInt( uint16_t n ){
+
+		/* Get a random uint16_t value and do modulo n */
+		uint16_t randVal;
+		uint16_t maxRand = 0xFFFF;
+
+		randVal = call Random.rand16() & maxRand;
+
+		return ( randVal % n );
+	}
+
+	/**************************** **************************** ****************************/
+	/**************************** **************************** ****************************/
+	/**************************** **************************** ****************************/
 }
 

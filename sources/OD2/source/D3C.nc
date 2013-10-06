@@ -19,8 +19,8 @@
 *
 * Note that the scheme is practically sequential!
 *
-* @date:	3 March 2011
-* @revision: 	1.0
+* @date:	5 October 2013
+* @revision: 	1.3
 * @author: 	George Valkanas ( http://www.di.uoa.gr/~gvalk , gvalk@di.uoa.gr )
 * 		National and Kapodistrian University of Athens,
 * 		Dept. Informatics & Telecommunications
@@ -33,14 +33,14 @@
 
 */
 
+#include <stdlib.h>
+#include <stdio.h>
+
 #include "Timer.h"		// For use of timer
 #include "AvroraPrint.h"	// For debugging purposes
 #include "D3.h"
 
 #include "CommQueue.h"
-
-#include <stdlib.h>
-#include <stdio.h>
 
 /**
 * This is an implementation of a mote that reads values and builds a Linear Regression
@@ -112,6 +112,12 @@ implementation{
 	/* The id of the parent node of this mote */
 	uint8_t parentId = PARENT_NODE_ID;
 
+	/* This method is used to send the new point to the parent as an outlier */
+	int32_t seqNo;
+	comm_queue_t* lastCommMsg;
+	void task sendData();
+	void sendOutlier( uint16_t* tuple );
+
 	/****************************************************************************************
 	* 		CUSTOM COMMAND DECLARATION. Both Components and Tasks			*
 	*****************************************************************************************/
@@ -128,12 +134,6 @@ implementation{
 
 	/* This method checks whether the given tuple is an outlier or not */
 	bool isOutlier( float* tuple );
-
-	/* This method is used to send the new point to the parent as an outlier */
-	int32_t seqNo;
-	comm_queue_t* lastCommMsg;
-	void task sendData();
-	void sendOutlier( uint16_t* tuple );
 
 	/* Clears the sample from all of the tuples that should be evicted
 	 (actually there is only one such tuple each time the function is called) */
@@ -228,6 +228,7 @@ implementation{
 			printInt16(AM_CONTROL_NOT_STARTED);
 	}
 
+
 	/* When the RadioControl has started (the radio is ready for use), start a timer
 	* for the sampling period. */
 	event void RadioControl.startDone(error_t err) {
@@ -241,6 +242,7 @@ implementation{
 		}else
 			call RadioControl.start();
 	}
+
 
 	/* Event occuring when the AM controller is requested to stop */
 	event void RadioControl.stopDone(error_t err) {}
@@ -622,12 +624,15 @@ implementation{
 			resend = TRUE;
 
 		}else{
+
+			/* The item has been successfully sent. Initialize the lastCommMsg */
+			lastCommMsg = 0x0;
+
 			if ( queueSize != 0 ){
 
 				/* If the last packet has been delivered (and ack'ed), but there are pending items
 				in the communication queue, send these as well. Reset the latestMessage */
 				resend = TRUE;
-				lastCommMsg = 0x0;
 			}
 		}
 		
@@ -667,7 +672,7 @@ implementation{
 			comm_queue_t* rcm = (comm_queue_t*)data;
 
 			/* Such messages are always (and only) sent from child nodes. Get the child node id */
-			memcpy(outlier, rcm->data, DATA_SIZE );
+			memcpy( outlier, rcm->data, DATA_SIZE );
 
 			/* XXX I should be enqueueing the received message to avoid reporting it twice.
 			* XXX Alternatively, keep track of the sequence number for each node that can send */

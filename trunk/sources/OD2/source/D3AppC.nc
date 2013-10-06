@@ -87,6 +87,7 @@ implementation {
 
 	/* For more reliable communication */
 	D3C.PacketLink -> CC2420ActiveMessageC;
+	D3C.PacketAcknowledgements -> AMSenderC;
 
 	D3C.Random->RandomC;
 }

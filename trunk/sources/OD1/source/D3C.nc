@@ -378,7 +378,7 @@ implementation{
 
 		/* Request synchronous acknowledgement. If we can not set that now, repost the task */
 		errVal = call PacketAcknowledgements.requestAck( &packet );
-		if ( errVal == EBUSY  ){
+		if ( errVal == EBUSY || errVal == ERETRY ){
 			post sendData();
 			return;
 		}
@@ -691,7 +691,7 @@ implementation{
 			with a NULL value for the first argument, but also increase the sample! */
 			updateVarianceEstimation( NULL, t );
 			sampleSize++;
-		}/home/lebiathan/Programming/helios/workspaces/workspace-ssg4e/dats-bob/SenseBench/output/06Oct2013-20-59-51/avroraJobs/exp1a-OD1-x9-OD-1
+		}
 
 		/* Store the given value and the timestamp that we encountered the tuple */
 		memcpy(sample + idx, t, sizeof(float) * DIMS);

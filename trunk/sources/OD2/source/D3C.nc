@@ -66,7 +66,9 @@ module D3C @safe() {
 		interface Receive as RadioReceive;
 		interface SplitControl as RadioControl;
 		interface Packet;
+
 		interface PacketLink;	/* For more reliable sending */
+		interface PacketAcknowledgements; /* For requesting the ACK of a package */
 
 		/* To create a random sample from the input data */
 		interface Random;
@@ -589,6 +591,8 @@ implementation{
 	/* Task that performs the actual sending of a packet from the communication queue */
 	void task sendData(){
 
+		error_t errVal;
+
 		/* Method called for sending. If no previous message exists, dequeue one */
 		if ( lastCommMsg == 0x0 )
 			lastCommMsg = dequeue();
@@ -597,13 +601,30 @@ implementation{
 		memcpy( call RadioSend.getPayload( &packet, sizeof( comm_queue_t ) ), lastCommMsg, sizeof( comm_queue_t ) );
 
 		/* Add some retries for more robust communication */
-		call PacketLink.setRetries( &packet, 3 );
-		call PacketLink.setRetryDelay( &packet, 0 );
+//		call PacketLink.setRetries( &packet, 3 );
+//		call PacketLink.setRetryDelay( &packet, 0 );
+
+		/* Request synchronous acknowledgement. If we can not set that now, repost the task */
+		errVal = call PacketAcknowledgements.requestAck( &packet );
+		if ( errVal == EBUSY || errVal == ERETRY ){
+			post sendData();
+			return;
+		}
 
 		/* Send the packet across the network */
-		if ( call RadioSend.send( parentId, &packet, sizeof( comm_queue_t ) ) != SUCCESS ){
+		errVal = call RadioSend.send( parentId, &packet, sizeof( comm_queue_t ) );
+		if ( errVal == FAIL ){
 
-			/* We failed to send the item (h/w failure). Repost the task */
+			/* Failure to send. Can't proceed */
+			char dbg_msg[30];
+			sprintf( dbg_msg, "NETW SND FAIL (%d)", (int)TOS_NODE_ID );
+			printStr(dbg_msg);
+
+			call RadioSend.cancel( &packet );
+
+		}else if ( errVal != SUCCESS ){
+
+			/* Sending did not succeed but we can retry. repost the task */
 			post sendData();
 		}
 	}
@@ -619,20 +640,34 @@ implementation{
 		queueSize = queue_size();
 
 		/* Check if we had a problem during sending */
-		if ( error != SUCCESS ){
+		if ( error == EBUSY || error == ERETRY || error == ENOACK ){
 
 			resend = TRUE;
 
+		}else if ( error == EOFF || error == ESIZE || error == ENOMEM ){
+
+			char dbg_msg[30];
+			sprintf(dbg_msg, "NETW (%d) SVRE: %d", (int)TOS_NODE_ID, (int)error );
+			printStr(dbg_msg);
+
 		}else{
 
-			/* The item has been successfully sent. Initialize the lastCommMsg */
-			lastCommMsg = 0x0;
+			if ( call PacketAcknowledgements.wasAcked( bufPtr ) == FALSE ){
 
-			if ( queueSize != 0 ){
-
-				/* If the last packet has been delivered (and ack'ed), but there are pending items
-				in the communication queue, send these as well. Reset the latestMessage */
+				/* If the packet has not been acknowledged, resend it */
 				resend = TRUE;
+
+			}else{
+
+				/* Message sent and ack'ed. Reset to NULL, so that we send another msg if needed. */
+				lastCommMsg = 0x0;
+	
+				if ( queueSize != 0 ){
+	
+					/* If the last packet has been delivered (and ack'ed), but there are pending items
+					in the communication queue, send these as well. Reset the latestMessage */
+					resend = TRUE;
+				}
 			}
 		}
 		

@@ -173,9 +173,6 @@ def runExperiment(exprAttr, exprAttrCols, outputDir):
 	xVals = exprAttr[xValAttr+"s"].split(";")
 	xValLabels = exprAttr["XvalLabels"].split(";")
 
-	for task in tasks:
-		print task;
-
 	for plat in optPlatList:
 		runTimeInit(plat)
 		for task in tasks:

@@ -23,16 +23,13 @@ optExprList = ["1a", "1b", "2a", "2b", "3a", "3b", "4a", "4b", "5a", "5b", "6a",
 optStartInstance = 1
 optEndInstance = 2
 
-#Flag to determine whether Avrora jobs will be executed via Condor parallel execution system
-optUseCondor = True
-
 #Flag to determine whether runs that are equivalent should be skipped
 optSkipEquivRuns = True
 
 def parseArgs(args):	
-	global optScenarioDir, optOutputDir, optPlatList, optExprList, optStartInstance, optEndInstance, optUseCondor
+	global optScenarioDir, optOutputDir, optPlatList, optExprList, optStartInstance, optEndInstance
 	try:
-		optNames = ["scenario-dir=", "outputdir=", "plat=", "exp=", "start-instance=", "end-instance=", "use-condor=", "skip-equiv-runs="]
+		optNames = ["scenario-dir=", "outputdir=", "plat=", "exp=", "start-instance=", "end-instance=", "skip-equiv-runs="]
 	
 		#append the result of getOpNames to all the libraries 
 		optNames = UtilLib.removeDuplicates(optNames)
@@ -56,8 +53,6 @@ def parseArgs(args):
 			optStartInstance = int(a)
 		elif (o == "--end-instance"):
 			optEndInstance = int(a)	
-		elif (o == "--use-condor"):
-			optUseCondor = bool(a)
 		elif (o == "--skip-equiv-runs"):
 			optSkipEquivRuns = bool(a)
 		else:
@@ -72,7 +67,6 @@ def usage():
 		print "\t--exp=[1a,1b,2a,2b,3a,3b,4a,4b,5a,5b,6a,6b,7]\n\t\tdefault="+str(optExprList)
 		print "\t--start-instance=<int>\n\t\tdefault="+str(optStartInstance)
 		print "\t--end-instance=<int>\n\t\tdefault="+str(optEndInstance)
-		print "\t--use-condor=<bool>\n\t\tdefault="+str(optUseCondor)
 
 
 #Ouput info message to screen and logger if applicable
@@ -209,10 +203,6 @@ def runExperiment(exprAttr, exprAttrCols, outputDir):
 						print "Error: Platform %s not supported" % (plat)
 						sys.exit(2)
 
-					#TODO: If not using Condor, run Avrora now
-					#if (not optUseCondor):
-					#	runAvroraJob(runAttr, runAttrCols)
-
 					#3 Log the (partial) results
 					SBLib.logResultsToFiles(runAttr, runAttrCols, optOutputDir, "runs")
 
@@ -270,7 +260,7 @@ def cleanup():
 
 
 def main(): 	
-	global optScenarioDir, optOutputDir, optUseCondor
+	global optScenarioDir, optOutputDir
 
 	#parse the command-line arguments
 	parseArgs(sys.argv[1:]) 

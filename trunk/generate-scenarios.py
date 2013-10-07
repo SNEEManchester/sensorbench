@@ -72,7 +72,7 @@ def generateScenarios():
 							networkLib.generatePhysicalSchema(nSize, nSourcePercent, universalExtent, eastExtent, westExtent, sneeTopFname, optScenarioDir+os.sep+physSchemaFname) #snee physical Schema
 
 			#create linear layout
-			for instance in range(1,optNumInstances):
+			for instance in range(1,optNumInstances+1):
 				(sneeTopFname,avroraTopFname)=networkLib.getTopologyFilenames(nSize,"linear",nDensity, instance)
 				field = networkLib.generateLinearTopology(instance, numNodes = nSize, radioRange = 15, rValue = nDensity)
 				field.generateTopFile(optScenarioDir+os.sep+avroraTopFname)
@@ -82,7 +82,7 @@ def generateScenarios():
 					networkLib.generatePhysicalSchema(nSize, nSourcePercent, universalExtent, eastExtent, westExtent, sneeTopFname, optScenarioDir+os.sep+physSchemaFname)
 
 			#create grid layout
-			for instance in range(1,optNumInstances):
+			for instance in range(1,optNumInstances+1):
 				(sneeTopFname,avroraTopFname)=networkLib.getTopologyFilenames(nSize,"grid",nDensity, instance)
 				numNodesX = int(math.sqrt(nSize))
 				numNodesY = numNodesX 

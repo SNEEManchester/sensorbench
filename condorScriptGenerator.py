@@ -72,6 +72,8 @@ def generateScriptForEachJob():
 def generateScript():
     # writes top blurb for condor, which covers spec of machines, memory allocation, etc
 		generateTopBlurb()
+		#clean avriora jar folder
+		shutil.rmtree("avroraJobsTar")
     #read in each folder from the avrora folder and make a top for it.
 		generateScriptForEachJob()
 

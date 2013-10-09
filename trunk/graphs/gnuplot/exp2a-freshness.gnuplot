@@ -12,12 +12,20 @@ set xlabel "Network Layout"
 set ylabel "Data Freshness (s)"
 set key top right
 
-set yrange [0:]
-set xtics ("linear" 12, "grid" 22, "random" 32)
-set datafile missing '?'
-set datafile separator ","
+n=3
+dx=3
+total_box_width_relative=0.75
+d_width=(total_box_width_relative)/n
+d_width2= d_width + d_width
+d_width3= d_width2 + d_width 
+gap_width_relative=0.3
+set boxwidth total_box_width_relative/n 
 
-plot CSV_DIR.'exp2a-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'raw'? column(FRESHNESS_COL):1/0) title 'SNEE raw' with boxes, \
-     CSV_DIR.'exp2a-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'aggr'? column(FRESHNESS_COL):1/0) title 'SNEE aggr' with boxes, \
-     CSV_DIR.'exp2a-MHOSC-results-avg.csv' using XVAL_COL:FRESHNESS_COL title 'MHOSC' with boxes
+
+set yrange [0:18]
+set xrange [0.5:5]
+set xtics ("linear" 1, "grid" 2, "random" 3)
+
+plot CSV_DIR."exp2a-Freshness.data" using 1:2 with boxes title 'SNEE raw', CSV_DIR."exp2a-Freshness.data" using ($1+d_width):3 with boxes title 'SNEE aggr', CSV_DIR."exp2a-Freshness.data" using ($1+d_width2):4 title 'MHOSC' with boxes
+
 

@@ -56,19 +56,6 @@ def parseRunResults(runAttr, runDirName):
 		else:
 			parseAcquireDeliverTimes.parse(avroraLogFile, runAttr, False)
 
-def mapTopologyTypes(runAttr):
-	if (runAttr['Experiment']=='2a' or runAttr['Experiment']=='2a'):
-		if (runAttr['xvalLabel']=='linear'):
-			runAttr['xvalLabel'] = 12
-		elif (runAttr['xvalLabel']=='grid'):
-			runAttr['xvalLabel'] = 22
-		elif (runAttr['xvalLabel']=='random'):
-			runAttr['xvalLabel'] = 32
-		else:
-			print "Uncognized topology type: "+line
-			sys.exit(2)
-
-
 def fillInMissingVals(runAttr):
 	if (runAttr['Platform']=="MHOSC"):
 		runAttr["ExitCode"] = 0
@@ -101,9 +88,6 @@ def generatePerRunResults():
 			parseRunResults(runAttr, runDirName)
 		else:
 			SBLib.copyEquivRunResults(runAttr, runAttrCols, optOutputDir, "results-raw")
-
-		#Map different topology types to numbers for graph plotting
-		mapTopologyTypes(runAttr)
 
 		#Recreates the CSV, this time with the results from the Avrora simulation
 		SBLib.logResultsToFiles(runAttr, runAttrCols, optOutputDir, "results-raw")			

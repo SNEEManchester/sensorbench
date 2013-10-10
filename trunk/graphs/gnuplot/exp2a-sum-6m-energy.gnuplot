@@ -13,7 +13,6 @@ set ylabel "Total Network Energy over 6 Months (J)"
 set key top right
 
 set yrange [0:]
-set xtics ("linear" 12, "grid" 22, "random" 32)
 set datafile missing '?'
 set datafile separator ","
 

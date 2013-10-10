@@ -10,7 +10,7 @@ set boxwidth 0.9
 
 set xlabel "Network Layout"
 set ylabel "Total Network Energy over 6 Months (J)"
-set key top right
+set key center left
 
 set yrange [0:]
 set datafile missing '?'

@@ -163,6 +163,11 @@ def generateAggregatedResults():
 			#Calculate average
 			for attr in avgAttrList:
 				cumSumAttr[attr] = float(cumSumAttr[attr]) / float(counter)
+
+			#Do not plot a value for data freshness if delivery rate=0
+			if (float(cumSumAttr['Delivery Rate'])==0):
+				cumSumAttr['Data Freshness'] = '?'
+
 			#Write to file
 			SBLib.logResultsToFiles(cumSumAttr, runAttrCols, optOutputDir, "results-avg")
 			#Reset cumulative sum/counter
@@ -176,6 +181,11 @@ def generateAggregatedResults():
 	if (counter > 0):
 		for attr in avgAttrList:
 			cumSumAttr[attr] =  float(cumSumAttr[attr]) / float(counter)
+
+		#Do not plot a value for data freshness if delivery rate=0
+		if (float(cumSumAttr['Delivery Rate'])==0):
+			cumSumAttr['Data Freshness'] = '?'
+
 		#Write to file
 		SBLib.logResultsToFiles(cumSumAttr, runAttrCols, optOutputDir, "results-avg")
 

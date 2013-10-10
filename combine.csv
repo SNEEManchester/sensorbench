@@ -1,0 +1,8 @@
+dir,exps,plats,tasks,instances
+13Sep2013-15-54-08/SenseBenchCondor13Sept2013-15-54-08Output,2a;3a;4a;5a;7,MHOSC,raw,1-9
+18Sep2013-14-21-52/senseBenchCondor18Sept2013-14-21-52Output,1a;2a;3a;4a;5a;7,INSNEE,raw;aggr;corr1;corr2,1-2
+SenseBenchcondor02Oct2013-22-28-50,1a,MHOSC,raw,1-9
+SenseBenchcondor05Oct2013-01-59-30,1a;2a;3a;4a;5a;7,INSNEE,raw;aggr;corr1;corr2,3-5
+SenseBenchcondor05Oct2013-19-09-52,1a;2a;3a;4a;5a;7,INSNEE,raw;aggr;corr1;corr2,6-9
+SenseBenchcondor07Oct2013-18-03-39,1a;2a;3a;4a;5a;7,MHOSC,raw,10-10
+SenseBenchcondor07Oct2013-18-26-07,1a;2a;3a;4a;5a;7,INSNEE,raw;aggr;corr1;corr2,10-10

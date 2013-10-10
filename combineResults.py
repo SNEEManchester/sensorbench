@@ -29,6 +29,8 @@ def parseArgs(args):
 
 
 def usage():
+	print "Use this script to combine the results of several runs prior to running generateResultsCSV.py"
+	print "Usage:"
 	print "combineResults.py --combined-results-dir=<dir>\n\t\tdefault="+optCombinedResultsDir
 
 def shouldBeIncluded(desiredAttr,runAttr):
@@ -86,6 +88,14 @@ def main():
 			continue
 		desiredAttr = CSVLib.line2Dict(line, desiredAttrCols)
 		parseExperimentalRun(desiredAttr)
+
+	print "Before generateResultsCSV.py, open "+optCombinedResultsDir+os.sep+"all-runs.csv using a spreadsheet application and sort by:"
+	print "1. Platform"
+	print "2. Experiment"
+	print "3. Task"
+	print "4. xValLabel"
+	print "5. Instance\n"
+	print "Make sure you save the above as a CSV file without quotation marks."
 
 
 if __name__ == "__main__":

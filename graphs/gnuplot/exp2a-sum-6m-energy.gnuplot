@@ -3,28 +3,21 @@ load 'gnuplot/init.gnuplot'
 set terminal pdf enhanced color
 set out PDF_DIR.'exp2a-sum-6m-energy.pdf'
 
+set style data histogram
+set style histogram cluster gap 1
 set style fill pattern border -1
-set boxwidth 2
+set boxwidth 0.9
 
-set auto x
-set auto y
 set xlabel "Network Layout"
 set ylabel "Total Network Energy over 6 Months (J)"
 set key top right
 
+set yrange [0:]
+set xtics ("linear" 12, "grid" 22, "random" 32)
+set datafile missing '?'
+set datafile separator ","
 
-n=3
-dx=3
-total_box_width_relative=0.75
-d_width=(total_box_width_relative)/n
-d_width2= d_width + d_width
-d_width3= d_width2 + d_width 
-gap_width_relative=0.3
-set boxwidth total_box_width_relative/n 
+plot CSV_DIR.'exp2a-INSNEE-raw-results-avg.csv' using SUM_6M_ENERGY_COL:xtic(XVAL_COL) title 'SNEE raw', \
+     CSV_DIR.'exp2a-INSNEE-aggr-results-avg.csv' using SUM_6M_ENERGY_COL:xtic(XVAL_COL) title 'SNEE aggr', \
+     CSV_DIR.'exp2a-MHOSC-results-avg.csv' using SUM_6M_ENERGY_COL:xtic(XVAL_COL) title 'MHOSC'
 
-
-set yrange [0:30000000]
-set xrange [0.5:5]
-set xtics ("linear" 1, "grid" 2, "random" 3)
-
-plot CSV_DIR."exp2a-Sum.data" using 1:2 with boxes title 'SNEE raw', CSV_DIR."exp2a-Sum.data" using ($1+d_width):3 with boxes title 'SNEE aggr', CSV_DIR."exp2a-Sum.data" using ($1+d_width2):4 title 'MHOSC' with boxes

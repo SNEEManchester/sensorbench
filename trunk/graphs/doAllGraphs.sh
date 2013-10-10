@@ -1,6 +1,4 @@
-
 ./doExpGraphs.sh 1a
-python sortOutCSVFilesFor2a.py
 ./doExpGraphs.sh 2a
 ./doExpGraphs.sh 3a
 ./doExpGraphs.sh 4a

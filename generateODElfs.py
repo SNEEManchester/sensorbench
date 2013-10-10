@@ -130,6 +130,8 @@ def generateElfsForExperimentalSetup(exprAttr, exprAttrCols):
 	#
 
 	for task in tasks:
+		if not task in ["OD"]:
+				continue;
 		for (xVal,xValLabel) in zip(xVals,xValLabels):
 			for instance in range(1,optNumInstances+1):
 

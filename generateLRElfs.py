@@ -118,6 +118,8 @@ def generateElfsForExperimentalSetup(exprAttr, exprAttrCols):
 	xValLabels = exprAttr["XvalLabels"].split(";")
 
 	for task in tasks:
+		if not task in ["LR"]:
+				continue;
 		for (xVal,xValLabel) in zip(xVals,xValLabels):
 			for instance in range(1,optNumInstances+1):
 				exprAttr["Instance"] = instance

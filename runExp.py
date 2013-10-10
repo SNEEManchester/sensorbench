@@ -152,7 +152,7 @@ def taskSupported(plat, task):
 	elif (plat == "OD1" or plat == "OD2" or plat == "OD3"):
 		return ODMediator.taskSupported(task)
 	elif (plat == "LR"):
-		LRMediator.taskSupported(task)
+		return LRMediator.taskSupported(task)
 	else:
 		print "Error: Platform %s not supported" % (plat)
 		sys.exit(2)
@@ -166,9 +166,9 @@ def runExperiment(exprAttr, exprAttrCols, outputDir):
 	xValAttr = exprAttr["XvalAttr"]
 	xVals = exprAttr[xValAttr+"s"].split(";")
 	xValLabels = exprAttr["XvalLabels"].split(";")
-
 	for plat in optPlatList:
-		runTimeInit(plat)
+		if (plat == "OD1" or plat == "OD2" or plat == "OD3"):
+			runTimeInit(plat)
 		for task in tasks:
 			if (not taskSupported(plat, task)):
 				continue;
@@ -183,15 +183,14 @@ def runExperiment(exprAttr, exprAttrCols, outputDir):
 					#Does not create an Avrora Job if there is another run that produces
 					#equivalent results to this one
 					if ((runAttr['Experiment'],plat) in equivRuns.dict and optSkipEquivRuns):
+						print "plat is %s and in eqiv thingy" % plat
 						runAttr['Equiv Run'] = equivRuns.dict[(runAttr['Experiment'],plat)]
 						SBLib.logResultsToFiles(runAttr, runAttrCols, optOutputDir, "runs")
 						continue
-
 					if (plat == "INSNEE"):
 						SNEEMediator.generateAvroraJob(task,xVal,xValLabel,xValAttr,instance,runAttr,runAttrCols,outputDir, runOutputDir, avroraJobsRootDir)
 					elif (plat == "MHOSC"):
 						MHOSCMediator.generateAvroraJob(task,xVal,xValLabel,xValAttr,instance,runAttr,runAttrCols,outputDir, runOutputDir, avroraJobsRootDir)
-
 					elif (plat == "OD1" or plat == "OD2" or plat == "OD3"):
 						ODMediator.generateAvroraJob(task,xVals,xValLabels,xValAttr,instance,runAttr,runAttrCols,outputDir, runOutputDir, avroraJobsRootDir)
 					elif (plat == "LR"):

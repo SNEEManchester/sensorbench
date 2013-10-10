@@ -89,7 +89,7 @@ def main():
 		desiredAttr = CSVLib.line2Dict(line, desiredAttrCols)
 		parseExperimentalRun(desiredAttr)
 
-	print "Before generateResultsCSV.py, open "+optCombinedResultsDir+os.sep+"all-runs.csv using a spreadsheet application and sort by:"
+	print "\nBefore running generateResultsCSV.py, open "+optCombinedResultsDir+os.sep+"all-runs.csv using a spreadsheet application and sort by:"
 	print "1. Platform"
 	print "2. Experiment"
 	print "3. Task"

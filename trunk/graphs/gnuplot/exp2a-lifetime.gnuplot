@@ -10,7 +10,7 @@ set boxwidth 0.9
 
 set xlabel "Network Layout"
 set ylabel "Lifetime (days)"
-set key top right
+set key center left
 
 set yrange [0:]
 set datafile missing '?'

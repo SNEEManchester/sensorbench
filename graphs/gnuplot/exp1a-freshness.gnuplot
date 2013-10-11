@@ -22,5 +22,5 @@ set datafile separator ","
 #MHOSC
 plot CSV_DIR.'exp1a-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'raw'? column(FRESHNESS_COL):1/0) title 'SNEE raw', \
      CSV_DIR.'exp1a-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'aggr'? column(FRESHNESS_COL):1/0) title 'SNEE aggr', \
-     CSV_DIR.'exp1a-MHOSC-results-avg.csv' using XVAL_COL:FRESHNESS_COL title 'MHOSC'
-
+     CSV_DIR.'exp1a-MHOSC-results-avg.csv' using XVAL_COL:FRESHNESS_COL title 'MHOSC', \
+     CSV_DIR.'exp1a-OD2-results-avg.csv' using XVAL_COL:FRESHNESS_COL title 'OD2'

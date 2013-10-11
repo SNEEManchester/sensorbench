@@ -221,6 +221,8 @@ def generateSettingFiles(elfOutputFolder, runAttr):
 #ifndef D3_GEN_H
 #define D3_GEN_H
 
+#define PREFILL
+
 /* Some macros that come in handy */
 #ifndef max
     #define max(a,b) (((a) > (b)) ? (a) : (b))
@@ -229,9 +231,13 @@ def generateSettingFiles(elfOutputFolder, runAttr):
 	#define min(a,b) (((a) < (b)) ? (a) : (b))
 #endif
 
-#define WINDOW_SIZE 10000	//The size of the window for the query
-#define SLIDE_SIZE 10000	//How much the window slides for the new set of tuples
 #define SAMPLING_FREQUENCY %s	// sampling frequency in milliseconds
+#define WINDOW_SIZE (SAMPLING_FREQUENCY * 10)	//The size of the window for the query
+#define SLIDE_SIZE 10000	//How much the window slides for the new set of tuples
+
+
+#define MIN_VAL 0
+#define MAX_VAL 1024
 
 /* The maximum number of allowed tuples, based on the window size and the sampling frequency */
 #define MAX_WINDOW_SIZE (WINDOW_SIZE / SAMPLING_FREQUENCY)
@@ -243,16 +249,13 @@ def generateSettingFiles(elfOutputFolder, runAttr):
 #define SAMPLE_SIZE max( (int)(MAX_WINDOW_SIZE * SAMPLE_PRCNT + 0.5), 1 )
 
 /* This is the range used for the neighborhood */
-#define RANGE 5
+#define RANGE (double)((double)5.0 / (double)(MAX_VAL - MIN_VAL))
 
 /* A probability under which tuples are marked as outliers */
 #define OUTLIER_PROB 0.15
 
 /* Computing the outlier threshold, in number of tuples */
 #define OUTLIER_THRESHOLD max( (int)(OUTLIER_PROB * MAX_WINDOW_SIZE + 0.5), 1 )
-
-#define MIN_VAL 0
-#define MAX_VAL 1024
 
 /* HERE WE DEFINE POSSIBLE ERROR CODES */
 #define AM_LOCKED_OK 0

@@ -1,11 +1,4 @@
 Experiment,XvalAttr,Y,Tasks,XvalLabels,PhysicalSchemas,RadioLossRates,AcquisitionRates
-0a,AcquisitionRate,Freshness,raw,1;2;4;8;16;32,n9_random_d3_s80,0,1;2;4;8;16;32
-0b,AcquisitionRate,OutputRate,raw,1;2;4;8;16;32,n9_random_d3_s80,0,1;2;4;8;16;32
-0c,AcquisitionRate,TotalEnergy,raw,1;2;4;8;16;32,n9_random_d3_s80,0,1;2;4;8;16;32
-0d,AcquisitionRate,Lifetime,raw,1;2;4;8;16;32,n9_random_d3_s80,0,1;2;4;8;16;32
-0e,AcquisitionRate,DeliveryRate,raw,1;2;4;8;16;32,n9_random_d3_s80,0,1;2;4;8;16;32
-alphaCalib,PhysicalSchema,DeliveryRate,raw,n100_random_d3_s80,n100_random_d3_s80,0,128
-alphaCalib2,PhysicalSchema,DeliveryRate,raw,n25_linear_d3_s80;n25_random_d1_s20;n25_random_d3_s100;n25_random_d3_s80,n25_linear_d3_s80;n25_random_d1_s20;n25_random_d3_s100;n25_random_d3_s80,0,32
 1a,PhysicalSchema,Lifetime,raw;aggr;OD,9;25;100,n9_random_d3_s80;n25_random_d3_s80;n100_random_d3_s80,0,128
 1b,PhysicalSchema,Freshness,raw;aggr;OD,9;25;100,n9_random_d3_s80;n25_random_d3_s80;n100_random_d3_s80,0,128
 2a,PhysicalSchema,Lifetime,raw;aggr;OD,linear;grid;random,n25_linear_d3_s80;n25_grid_d3_s80;n25_random_d3_s80,0,32

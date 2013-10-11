@@ -106,6 +106,8 @@ implementation{
 	/* Dimensionality index. Shows which array to use next */
 	uint8_t dimIdx;
 
+	bool firstTimeEver = TRUE;
+
 	/************************************************************************
 	*			VARIABLES USED TO COMMUNICATE WITH ONE ANOTHER				* 
 	 ************************************************************************/
@@ -239,8 +241,9 @@ implementation{
 		if (err == SUCCESS){
 
 			/* Start a timer, provided this is not the sink node (tree root) */
-			if ( TOS_NODE_ID != 0 )
+			if ( TOS_NODE_ID != 0 ){
 				call Timer.startOneShot(1);
+			}
 		}else
 			call RadioControl.start();
 	}
@@ -324,6 +327,48 @@ implementation{
 		uint32_t curTm;	/* an indication of the current time */
 		int32_t remaining;	/* remaining time until we sense the next batch */
 		float normT[DIMS];	/* here we store the normalized values */
+
+		#ifdef PREFILL
+		if ( firstTimeEver ){
+
+			uint16_t j = 0;
+
+			/* Repeat the process until we fill in the window */
+			for ( ; j < MAX_WINDOW_SIZE; j++ ){
+
+				/* Select a random value between [0,7], so that we get */
+				uint16_t rndFlct = randomInt( 7 ) - 3;
+
+				/* Normalize the values so that they are in the range [0,1] (kernels require that) */
+				for ( i = 0; i < DIMS; i++ ){
+					normT[i] = (float)(lastTuple[i] + rndFlct - MIN_VAL) / (float)(MAX_VAL - MIN_VAL);
+					if ( normT[i] < 0 )
+						normT[i] = 0;
+					else if ( normT[i] > 1.0 )
+						normT[i] = 1.0;
+				}
+
+				/* Unless we have reached the maximum window size, the window can expand */
+		        if ( windowSize < MAX_WINDOW_SIZE )
+		            ++windowSize;
+
+				/* First of all, remove from the sample any tuple that its time has elapsed */
+				evictFromSample();
+		
+				/* Check if the new tuple should be inserted in the sample */
+				if ( shouldInsert() ){
+		
+					/* If yes, find the index where it will be placed and add it there */
+					uint16_t idx = selectTupleToEvict();
+					addTuple( normT, idx );
+				}
+
+				clock++;
+			}
+
+			firstTimeEver = FALSE;
+		}
+		#endif
 
 		/* Normalize the values so that they are in the range [0,1] (kernels require that) */
 		for ( i = 0; i < DIMS; i++ )
@@ -502,7 +547,7 @@ implementation{
 	double computePointMass(float* point) {
 
 		int16_t i = 0;
-	        double sum = 0.0;
+        double sum = 0.0;
 
 		for ( ; i < sampleSize; i++) {
 
@@ -702,7 +747,6 @@ implementation{
 		} else {
 
 			/* If this is the root node, we print the information of the received tuple */
-			char dbg_msg[30];
 			uint16_t outlier[DIMS];	/* The outlier values */
 			comm_queue_t* rcm = (comm_queue_t*)data;
 
@@ -712,9 +756,12 @@ implementation{
 			/* XXX I should be enqueueing the received message to avoid reporting it twice.
 			* XXX Alternatively, keep track of the sequence number for each node that can send */
 
-			/* Ixent added this for SenseBench */
-	    	sprintf(dbg_msg, "DELIVER(id=%d,n=%d)", (int)rcm->id, outlier[0]);
-	    	printStr(dbg_msg);
+			{
+				/* Ixent added this for SenseBench */
+				char dbg_msg[30];
+		    	sprintf(dbg_msg, "DELIVER(id=%d,n=%d)", (int)rcm->id, outlier[0]);
+		    	printStr(dbg_msg);
+	    	}
 		}
 
 		/* In any case, the buffer pointer is returned */

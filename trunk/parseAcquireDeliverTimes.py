@@ -126,7 +126,7 @@ def parse2(avroraOutputFile,aqRate,bufferingFactor,simulationDuration,deliverTup
 	print "num tuples acquired="+str(acqTupleCount)
 	print "num tuples delivered="+str(delTupleCount)
 	print "output rate (tuples/s)="+str(float(delTupleCount)/simulationDuration)
-	print "delivery rate="+str(float(delTupleCount)/float(acqTupleCount))	
+	print "delivery rate (%)="+str(float(delTupleCount)/float(acqTupleCount)*100)	
 
 def parse(avroraOutputFile, runAttr, deliverTupleAtATime):
 
@@ -149,7 +149,7 @@ def parse(avroraOutputFile, runAttr, deliverTupleAtATime):
 		runAttr["Data Freshness"] = 0 # No tuples delivered
 	runAttr["Output Rate"] = float(delTupleCount)/float(simulationDuration) #tuples/s
 	if (acqTupleCount>0):
-		runAttr["Delivery Rate"] = float(delTupleCount)/float(acqTupleCount)
+		runAttr["Delivery Rate"] = float(delTupleCount)/float(acqTupleCount) * 100
 	else:
 		runAttr["Delivery Rate"] = 0 # No tuples acquired
 

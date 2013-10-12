@@ -229,9 +229,10 @@ of our #DEFINES, to know where to look for them */
 	#define min(a,b) (((a) < (b)) ? (a) : (b))
 #endif
 
+#define NUM_TUPLES 10			// the number of tuples that we are going to use
 #define SAMPLING_FREQUENCY %s		// sampling frequency in milliseconds
-#define WINDOW_SIZE (SAMPLING_FREQUENCY * 10)		//The size of the window for the query
-#define SLIDE_SIZE (SAMPLING_FREQUENCY * 10)		//How much the window slides for the new set of tuples
+#define WINDOW_SIZE (SAMPLING_FREQUENCY * NUM_TUPLES)		//The size of the window for the query
+#define SLIDE_SIZE (SAMPLING_FREQUENCY)		//How much the window slides for the new set of tuples
 
 #define DIMS 2	// number of dimensions
 

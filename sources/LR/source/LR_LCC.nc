@@ -164,6 +164,7 @@ implementation{
 	/* Task declaration to sense the environment */
 	#ifndef IS_ROOT
 
+	int16_t acqEpoch = -1;
 	task void readTuple();
 
 	/* Only intermediate nodes and leaves need to send data back to their parents. Not the root */
@@ -171,6 +172,8 @@ implementation{
 	#endif
 
 	#ifdef IS_ROOT
+
+	int16_t delEpoch = 0;
 
 	/* Task declaration to begin a new epoch */
 	task void startNewEpoch();
@@ -197,15 +200,6 @@ implementation{
 		i = val / 2;
 		val = (i * 5) >> 8;
 		return (uint16_t)(val + i);
-	}
-
-
-	void printValueWithHeader( char* head, uint32_t value );
-	void printValueWithHeader( char* head, uint32_t value ){
-
-		char prntVal[32];
-		sprintf( prntVal, "%s: %u", head, value );
-		printStr( prntVal );
 	}
 
 
@@ -270,11 +264,6 @@ implementation{
 	* prior to beginning a new round of requests to the sensors. */
 	task void startNewEpoch(){
 
-		#if DEBUG==1
-		printStr("A NEW ERA BEGINS!");
-		wasteCPU();
-		#endif
-
 		initializeData();
 
 		/* In case this is the root, we need to initialize values (a,b) as well. Moreover,
@@ -323,9 +312,7 @@ implementation{
 	/* Reads the next tuple */
 	void task readTuple(){
 
-		#if DEBUG
-		//printStr("ReadTuple()");
-		#endif
+		acqEpoch++;
 
 		/* Does not have to do anything else other than call the method to read data */
 		lastReadTime = call Timer.getNow();
@@ -345,13 +332,6 @@ implementation{
 			* moisture reading has been retrieved and stored, we request a temperature reading */
 			tmpX = data;
 			call YSensor.read();
-
-			//Ixent added this for SenseBench
-			{
-				char dbg_msg[30];
-				sprintf(dbg_msg, "ACQUIRE(id=%d,n=%d,m=%d,d=%u)",TOS_NODE_ID, 0, 0, data);
-				printStr(dbg_msg);
-			}
 
 		}else{
 			/* Print an error message and try to read again */
@@ -388,9 +368,9 @@ implementation{
 
 			//Ixent added this for SenseBench
 			{
-				char dbg_msg[30];
-				sprintf(dbg_msg, "ACQUIRE(id=%d,n=%d,m=%d,d=%u)",TOS_NODE_ID, 0, 0, data);
-				printStr(dbg_msg);
+				char dbg_msg[64];
+				sprintf( dbg_msg, "ACQUIRE(id=%d,ep=%d,x=%u,y=%u)", TOS_NODE_ID, acqEpoch, tmpX, data );
+				printStr( dbg_msg );
 			}
 
 			/* Set again to read the new tuple, taking into account the SAMPLING_FREQUENCY.
@@ -605,12 +585,12 @@ implementation{
 
 		//Ixent added this for SenseBench
 		{
-			char dbg_msg[30];
-			int16_t ia = (int)a, ib = (int)b;
-			uint16_t da = (uint16_t)((a - (float)ia) * 1000.0), db = (uint16_t)((b - (float)ib) * 1000.0);
-		    sprintf(dbg_msg, "DELIVER(id=%d,n=%d.%u,n=%d.%u)", TOS_NODE_ID, ia, da, ib, db );
+			char dbg_msg[64];
+		    sprintf(dbg_msg, "DELIVER(id=%d,ep=%d,x=%d,y=%d)", TOS_NODE_ID, delEpoch, a, b );
 		   	printStr(dbg_msg);
 	   	}
+
+		delEpoch++;
 
 		/* Log when all of this happened */
 		tmp = call Timer.getNow();

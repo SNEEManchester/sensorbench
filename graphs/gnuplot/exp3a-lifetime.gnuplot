@@ -18,8 +18,8 @@ set xtics
 set datafile missing '?'
 set datafile separator ","
 
-#MHOSC
-plot CSV_DIR.'exp3a-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'raw'? column(LIFETIME_COL):1/0) title 'SNEE raw', \
-     CSV_DIR.'exp3a-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'corr1'? column(LIFETIME_COL):1/0) title 'SNEE corr1', \
-     CSV_DIR.'exp3a-MHOSC-results-avg.csv' using XVAL_COL:LIFETIME_COL title 'MHOSC'
+plot CSV_DIR.'exp3a-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'raw'? column(LIFETIME_COL):1/0) title 'SNEE raw' linetype LT_INSNEE_RAW, \
+     CSV_DIR.'exp3a-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'corr1'? column(LIFETIME_COL):1/0) title 'SNEE corr1' linetype LT_INSNEE_CORR1, \
+     CSV_DIR.'exp3a-MHOSC-results-avg.csv' using XVAL_COL:LIFETIME_COL title 'MHOSC' linetype LT_MHOSC
+
 

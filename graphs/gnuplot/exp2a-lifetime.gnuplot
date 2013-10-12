@@ -16,7 +16,8 @@ set yrange [0:]
 set datafile missing '?'
 set datafile separator ","
 
-plot CSV_DIR.'exp2a-INSNEE-raw-results-avg.csv' using LIFETIME_COL:xtic(XVAL_COL) title 'SNEE raw', \
-     CSV_DIR.'exp2a-INSNEE-aggr-results-avg.csv' using LIFETIME_COL:xtic(XVAL_COL) title 'SNEE aggr', \
-     CSV_DIR.'exp2a-MHOSC-results-avg.csv' using LIFETIME_COL:xtic(XVAL_COL) title 'MHOSC'
+plot CSV_DIR.'exp2a-INSNEE-raw-results-avg.csv' using LIFETIME_COL:xtic(XVAL_COL) title 'SNEE raw' linetype LT_INSNEE_RAW, \
+     CSV_DIR.'exp2a-INSNEE-aggr-results-avg.csv' using LIFETIME_COL:xtic(XVAL_COL) title 'SNEE aggr' linetype LT_INSNEE_AGGR, \
+     CSV_DIR.'exp2a-MHOSC-results-avg.csv' using LIFETIME_COL:xtic(XVAL_COL) title 'MHOSC' linetype LT_MHOSC
+
 

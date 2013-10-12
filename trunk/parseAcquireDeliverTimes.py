@@ -27,13 +27,13 @@ def doComputeStats(id,n,m,aqRate,bufferingFactor, acqTupleCount, delTupleCount, 
 
 			#print "C"
 			delTupleCount += 1
-			tdelta_sum += tdelta
+			tdelta_sum += tdelta.seconds
 			#print "%d,%d,%d,%s,%s,%s" % (id, n, m, str(tacq), str(tdel), str(tdelta))
 
 	return (acqTupleCount, delTupleCount, tdelta_sum)
 
 def computeStats(aqRate,bufferingFactor, acquireTimes, deliverTimes, MAX_ID, MAX_N, MAX_M, deliverTupleAtATime):
-	(acqTupleCount, delTupleCount, tdelta_sum) = (0, 0, datetime.timedelta(0))
+	(acqTupleCount, delTupleCount, tdelta_sum) = (0, 0, 0)
 
 	for id in range(0,MAX_ID+1):
 		#print id
@@ -83,7 +83,7 @@ def parseFile(avrorafile, acquireTimes, deliverTimes, MAX_ID, MAX_N, MAX_M, deli
 			if not (id,n,m) in acquireTimes:
 				acquireTimes[(id,n,m)]=t
 			else:
-				print "IGNORING DUPLICATE acquired tuple: t=%s,id=%d,n=%d,m=%d" % (str(t), id, n, m)
+				print "IGNORING DUPLICATE acquired tuple in %s: t=%s,id=%s,n=%s,m=%s" % (avrorafile, str(t), str(id), str(n), str(m))
 
 			if (id > MAX_ID):
 				MAX_ID = id
@@ -121,7 +121,7 @@ def parse2(avroraOutputFile,aqRate,bufferingFactor,simulationDuration,deliverTup
 	(MAX_ID, MAX_N, MAX_M) = parseFile(avroraOutputFile, acquireTimes, deliverTimes, MAX_ID, MAX_N, MAX_M,deliverTupleAtATime)
 	(acqTupleCount, delTupleCount, tdelta_sum) = computeStats(aqRate,bufferingFactor, acquireTimes, deliverTimes, MAX_ID, MAX_N, MAX_M,deliverTupleAtATime)
 	
-	print "tdelta sum="+str(tdelta_sum)
+	print "tdelta sum (s)="+str(tdelta_sum)
 	print "tdelta average (data freshness)="+str(tdelta_sum/delTupleCount)
 	print "num tuples acquired="+str(acqTupleCount)
 	print "num tuples delivered="+str(delTupleCount)
@@ -142,9 +142,9 @@ def parse(avroraOutputFile, runAttr, deliverTupleAtATime):
 
 	runAttr["Tuple Acq Count"] = acqTupleCount
 	runAttr["Tuple Del Count"] = delTupleCount
-	runAttr["Tuple Delta Sum"] = tdelta_sum.seconds
+	runAttr["Tuple Delta Sum"] = tdelta_sum 
 	if (delTupleCount>0):
-		runAttr["Data Freshness"] = tdelta_sum.seconds/delTupleCount #tuple delta avg	
+		runAttr["Data Freshness"] = tdelta_sum/delTupleCount #tuple delta avg	
 	else:
 		runAttr["Data Freshness"] = 0 # No tuples delivered
 	runAttr["Output Rate"] = float(delTupleCount)/float(simulationDuration) #tuples/s

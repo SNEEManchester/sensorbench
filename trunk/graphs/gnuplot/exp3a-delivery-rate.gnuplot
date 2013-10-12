@@ -8,12 +8,12 @@ set auto y
 set style data linespoints
 set pointsize 1.5
 set xlabel "Network Density"
-set ylabel "Tuple Delivery Rate (delivered/acquired)"
+set ylabel "Tuples Delivered (%)"
 set key center right
 set style histogram cluster gap 1
 set style fill pattern border -1
 set boxwidth 0.9 absolute
-set yrange [0:1]
+set yrange [0:110]
 set xtics
 set datafile missing '?'
 set datafile separator ","

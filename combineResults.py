@@ -2,7 +2,7 @@ import os, getopt, sys, shutil
 import CSVLib, SBLib
 
 optResultsRootDir = os.getenv('HOME')+os.sep+'SenseBench-results'
-optCombinedResultsDir = optResultsRootDir+os.sep+'combined99'
+optCombinedResultsDir = optResultsRootDir+os.sep+'combined-results'
 
 def parseArgs(args):	
 	global optResultsRootDir, optCombinedResultsDir

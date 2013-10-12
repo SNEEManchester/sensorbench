@@ -117,7 +117,7 @@ implementation{
 	uint8_t parentId = PARENT_NODE_ID;
 
 	/* This method is used to send the new point to the parent as an outlier */
-	int32_t seqNo;
+	int16_t acqEpoch = -1;
 	comm_queue_t* lastCommMsg;
 	void task sendData();
 
@@ -184,12 +184,17 @@ implementation{
 
 	/* Id of the last mote from which we received the data */
 	uint16_t lastMoteId;
+	/* Epoch of the mote that we flagged as an outlier */
+	uint16_t lastEpoch;
 
 	/* Information regarding the mote from which we received information */
 	bool moteRcv[N_NODES];
 
 	/* The last reading for each mote */
 	uint16_t moteRead[N_NODES][DIMS];
+
+	/* The last acquisition epoch for each mote */
+	uint16_t moteEpoch[N_NODES];
 	#endif
 
 
@@ -221,7 +226,6 @@ implementation{
 
 		/* Initialize informatino for the communication queue. 1st tuple ever for this node,
 		* there is no previous communication message */
-		seqNo = 0;
 		lastCommMsg = 0x0;
 
 		for ( ; i < N_NODES; i++ )
@@ -314,10 +318,17 @@ implementation{
 		/* If the read operation completed successfully, do what we need */
 		if (result == SUCCESS){
 
-			//Ixent added this for SenseBench
-			char dbg_msg[30];
-			sprintf(dbg_msg, "ACQUIRE(id=%d,n=%d,m=%d,d=%d)",TOS_NODE_ID, 0, 0, data);
-			printStr(dbg_msg);
+			//Print that a new tuple was acquired
+			if ( dimIdx == (DIMS - 1)){
+				acqEpoch++;
+
+				{
+					char dbg_msg[64];
+					sprintf(dbg_msg, "ACQUIRE(id=%d,ep=%d,x=%d)",TOS_NODE_ID, acqEpoch, data);
+					printStr(dbg_msg);
+				}
+			}
+
 
 			/* Each node calls the read operation only after it has received data from its
 			* children. Therefore, the node performs a number of consecutive read operations,
@@ -351,7 +362,7 @@ implementation{
 
 		/* Fill in the details of the message that we want */
 		msg.id = TOS_NODE_ID;
-		msg.seqNo = seqNo;
+		msg.seqNo = acqEpoch;
 		memcpy( msg.data, tuple, DATA_SIZE );
 
 		/* Enqueue it for sending */
@@ -359,8 +370,6 @@ implementation{
 			/* Item enqueued successfully. Post the sending task */
 			post sendData();
 		}
-
-		seqNo++;
 	}
 
 
@@ -485,6 +494,7 @@ implementation{
 			if ( moteRcv[rcm->id] == FALSE ){
 
 				moteRcv[rcm->id] = TRUE;
+				moteEpoch[rcm->id] = rcm->seqNo;
 				memcpy( moteRead[rcm->id], rcm->data, DATA_SIZE );
 
 				/* post a task to update the model that the sink node uses */
@@ -530,6 +540,7 @@ implementation{
 
 		/* Get the tuple from that node */
 		memcpy( lastTuple, moteRead[i], DATA_SIZE );
+		memcpy( &lastEpoch, moteEpoch + i, sizeof( uint16_t ) ); 
 
 		/* Requesting to detect a value. Post a task that we want to check that tuple as an outlier */
 		detecting = TRUE;
@@ -592,7 +603,7 @@ implementation{
 
 				/* The tuple is an outlier. DELIVER it */
 	    		char dbg_msg[30];
-				sprintf(dbg_msg, "DELIVER(id=%d,n=%d)", lastMoteId, point[0]);
+				sprintf(dbg_msg, "DELIVER(id=%d,ep=%d,x=%d)", lastMoteId, lastEpoch, point[0]);
 				printStr(dbg_msg);
 
 			#endif

@@ -83,6 +83,8 @@ implementation{
 
 	const float sqrt5 = 2.236;	/* The square root of 5. Used in Scott's rule, for computing the bandwidth */
 
+	uint16_t acqEpoch = -1;
+
 	/* These two variables are not required given that we m */
 	uint16_t lastTuple[DIMS];	/* This is the latest tuple that was read */
 
@@ -117,7 +119,6 @@ implementation{
 	uint8_t parentId = PARENT_NODE_ID;
 
 	/* This method is used to send the new point to the parent as an outlier */
-	int32_t seqNo;
 	comm_queue_t* lastCommMsg;
 	void task sendData();
 	void sendOutlier( uint16_t* tuple );
@@ -218,9 +219,8 @@ implementation{
 		oldestTupleIdx = 0;
 		memset(used, 0, sizeof(bool) * SAMPLE_SIZE);
 
-		/* Initialize informatino for the communication queue. 1st tuple ever for this node,
+		/* Initialize information for the communication queue. 1st tuple ever for this node,
 		* there is no previous communication message */
-		seqNo = 0;
 		lastCommMsg = 0x0;
 
 		/* If the message size is too big for the payload, we just ignore it */
@@ -302,10 +302,15 @@ implementation{
 			* are returned to the parent.*/
 
 			//Print that a new tuple was acquired
-			char dbg_msg[30];
-			sprintf(dbg_msg, "ACQUIRE(id=%d,n=%d,m=%d,d=%d)",TOS_NODE_ID, 0, 0, data);
-			printStr(dbg_msg);
+			if ( dimIdx == (DIMS - 1)){
+				acqEpoch++;
 
+				{
+					char dbg_msg[64];
+					sprintf(dbg_msg, "ACQUIRE(id=%d,ep=%d,x=%d)",TOS_NODE_ID, acqEpoch, data);
+					printStr(dbg_msg);
+				}
+			}
 
 			/* Record the sensed value. The data read is for the same reading as before,
 			* but for another dimension. Read the next dimension */
@@ -621,7 +626,7 @@ implementation{
 
 		/* Fill in the details of the message that we want */
 		msg.id = TOS_NODE_ID;
-		msg.seqNo = seqNo;
+		msg.seqNo = acqEpoch;
 		memcpy( msg.data, tuple, DATA_SIZE );
 
 		/* Enqueue it for sending */
@@ -629,8 +634,6 @@ implementation{
 			/* Item enqueued successfully. Post the sending task */
 			post sendData();
 		}
-
-		seqNo++;
 	}
 
 	/* Task that performs the actual sending of a packet from the communication queue */
@@ -661,7 +664,7 @@ implementation{
 		if ( errVal == FAIL ){
 
 			/* Failure to send. Can't proceed */
-			char dbg_msg[30];
+			char dbg_msg[64];
 			sprintf( dbg_msg, "NETW SND FAIL (%d)", (int)TOS_NODE_ID );
 			printStr(dbg_msg);
 
@@ -691,7 +694,7 @@ implementation{
 
 		}else if ( error == EOFF || error == ESIZE || error == ENOMEM ){
 
-			char dbg_msg[30];
+			char dbg_msg[64];
 			sprintf(dbg_msg, "NETW (%d) SVRE: %d", (int)TOS_NODE_ID, (int)error );
 			printStr(dbg_msg);
 
@@ -758,8 +761,8 @@ implementation{
 
 			{
 				/* Ixent added this for SenseBench */
-				char dbg_msg[30];
-		    	sprintf(dbg_msg, "DELIVER(id=%d,n=%d)", (int)rcm->id, outlier[0]);
+				char dbg_msg[64];
+		    	sprintf(dbg_msg, "DELIVER(id=%d,ep=%d,x=%d)", (int)rcm->id, (int)rcm->seqNo, outlier[0]);
 		    	printStr(dbg_msg);
 	    	}
 		}

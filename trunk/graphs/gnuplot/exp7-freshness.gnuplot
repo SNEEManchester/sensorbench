@@ -18,12 +18,10 @@ set xtics
 set datafile missing '?'
 set datafile separator ","
 
-plot CSV_DIR.'exp7-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'raw'? column(FRESHNESS_COL):1/0) title 'SNEE raw', \
-     CSV_DIR.'exp7-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'aggr'? column(FRESHNESS_COL):1/0) title 'SNEE aggr', \
-     CSV_DIR.'exp7-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'corr1'? column(FRESHNESS_COL):1/0) title 'SNEE corr1', \
-     CSV_DIR.'exp7-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'corr2'? column(FRESHNESS_COL):1/0) title 'SNEE corr2', \
-     CSV_DIR.'exp7-MHOSC-results-avg.csv' using XVAL_COL:FRESHNESS_COL title 'MHOSC'
-#, \
-#     CSV_DIR.'exp7-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'LR'? column(FRESHNESS_COL):1/0) title 'SNEE LR', \
-#     CSV_DIR.'exp7-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'OD'? column(FRESHNESS_COL):1/0) title 'SNEE OD'
+plot CSV_DIR.'exp7-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'raw'? column(FRESHNESS_COL):1/0) title 'SNEE raw' linetype LT_INSNEE_RAW, \
+     CSV_DIR.'exp7-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'aggr'? column(FRESHNESS_COL):1/0) title 'SNEE aggr' linetype LT_INSNEE_AGGR, \
+     CSV_DIR.'exp7-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'corr1'? column(FRESHNESS_COL):1/0) title 'SNEE corr1' linetype LT_INSNEE_CORR1, \
+     CSV_DIR.'exp7-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'corr2'? column(FRESHNESS_COL):1/0) title 'SNEE corr2' linetype LT_INSNEE_CORR2, \
+     CSV_DIR.'exp7-MHOSC-results-avg.csv' using XVAL_COL:FRESHNESS_COL title 'MHOSC' linetype LT_MHOSC
+
 

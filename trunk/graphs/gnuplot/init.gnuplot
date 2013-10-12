@@ -10,3 +10,12 @@ LIFETIME_COL = 37
 CSV_DIR = "csv/"
 PDF_DIR = "pdf/"
 
+#Define the colours of the lines per platform/per task
+LT_INSNEE_RAW = 1
+LT_INSNEE_AGGR = 2
+LT_INSNEE_CORR1 = 3
+LT_INSNEE_CORR2 = 4
+LT_MHOSC = 5
+LT_OD2 = 6
+LT_LR = 7
+

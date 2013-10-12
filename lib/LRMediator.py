@@ -42,10 +42,7 @@ def getAvroraCommandString(runAttr, runAttrCols, avroraElfDir):
 	noLeafs = leafReader.readlines()
 	leafReader.close()
 	noLeafs = noLeafs[0]
-	#write leaf node number to commandstr
-	commandStr = commandStr + str(noLeafs)+ ","
-	#write root node to commandstr
-	commandStr = commandStr + "1,"
+
 	UnqiueReader = open(avroraElfDir+os.sep+"elfs"+os.sep+elfString+os.sep+"UniqueNodes", "r")
 	uniqueList = UnqiueReader.readlines()
 	UnqiueReader.close()
@@ -53,20 +50,29 @@ def getAvroraCommandString(runAttr, runAttrCols, avroraElfDir):
 	uniqueList = uniqueList.split("]")[0]
 	uniqueNodes = uniqueList.split(",")
 
+	#write "1" to commandstr for the root node
+	commandStr = commandStr + "1,"
+
+	#write the unique nodes then
 	for nodeid in range(0,len(uniqueNodes)):
-		if(nodeid ==  len(uniqueNodes)-1):
-			commandStr = commandStr + "1 "
-		else:
-			commandStr = commandStr + "1,"
+		commandStr = commandStr + "1,"
 
-	#add both leaf and root definition before the unique nodes
-	commandStr= commandStr + "leaf.elf mote0.elf "
+	#write leaf node number to commandstr
+	commandStr = commandStr + str(noLeafs)+ " "
 
+	#first add the root mote definition
+	commandStr = commandStr + "mote0.elf "
+
+	#add the unique mote definitions
 	for nodeid in range(0,len(uniqueNodes)):
 		uniqueNodeid = uniqueNodes[nodeid]
 		if(len(uniqueNodeid.split(" ")) == 2):
 			uniqueNodeid = uniqueNodeid.split(" ")[1]
 		commandStr = commandStr + "mote" + str(uniqueNodeid) + ".elf "
+
+	#Finally, add the leaf nodes
+	commandStr= commandStr + "leaf.elf"
+
 	return commandStr
 
 

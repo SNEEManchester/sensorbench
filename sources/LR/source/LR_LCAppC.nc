@@ -49,7 +49,7 @@ configuration LR_LCAppC {
 implementation { 
 
 	/* These components are required to sense the environment */
-	components LR_LCC, MainC, new TimerMilliC();
+	components LR_LCC, MainC, new TimerMilliC(), RandomC;
 
 	#ifndef IS_ROOT
 	/* Sensors to sense the environment. Only intermediate nodes need these */
@@ -81,4 +81,5 @@ implementation {
 	LR_LCC.AMControl -> ActiveMessageC;
 	LR_LCC.Packet -> AMSenderC;
 
+	LR_LCC.Random->RandomC;
 }

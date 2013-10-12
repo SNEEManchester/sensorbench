@@ -9,10 +9,10 @@ set style fill pattern border -1
 set boxwidth 0.9
 
 set xlabel "Network Layout"
-set ylabel "Tuple Delivery Rate (delivered/acquired)"
+set ylabel "Tuples Delivered (%)"
 set key center left
 
-set yrange [0:]
+set yrange [0:110]
 set datafile missing '?'
 set datafile separator ","
 

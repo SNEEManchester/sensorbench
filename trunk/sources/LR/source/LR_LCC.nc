@@ -73,6 +73,8 @@ module LR_LCC @safe() {
 		interface SplitControl as AMControl;
 		interface Packet;
 
+		/* To create a random sample from the input data */
+		interface Random;
 	}
 }
 
@@ -182,22 +184,8 @@ implementation{
 
 	void initializeData();
 
-
-	#if (PRINT_AB) || (DEBUG)
-
-	/** This method is used to print the coefficients a and b, as they have been computed */
-	#ifdef IS_ROOT
-	void printCoefs( ){
-
-		char prntVal[32];
-		uint32_t aVal, bVal;
-		memcpy( &aVal, &a, sizeof(float) );
-		memcpy( &bVal, &b, sizeof(float) );
-		sprintf( prntVal, "y = %u * x + %u", aVal, bVal );
-		printStr( prntVal );
-	}
-	#endif
-	#endif
+	uint16_t randomMaxInt();
+	uint16_t randomInt( uint16_t n );
 
 
 	uint16_t wasteCPU(){
@@ -211,32 +199,6 @@ implementation{
 		return (uint16_t)(val + i);
 	}
 
-	/* Waste CPU cycles, to be able to print after that */
-	#if (DEBUG)
-	#ifndef IS_ROOT
-	task void printBuffers(){
-
-		uint8_t dbgCntr;
-
-		printChar('M');
-		wasteCPU();
-
-		for ( dbgCntr = 0; dbgCntr < BFR_SZ; dbgCntr++ ){
-			printInt16( xvals[dbgCntr] );
-			wasteCPU();
-		}
-
-		/* Waste CPU cycles */
-		printChar('T');
-		wasteCPU();
-
-		for ( dbgCntr = 0; dbgCntr < BFR_SZ; dbgCntr++ ){
-			printInt16( yvals[dbgCntr] );
-			wasteCPU();
-		}
-	}
-	#endif
-	#endif
 
 	void printValueWithHeader( char* head, uint32_t value );
 	void printValueWithHeader( char* head, uint32_t value ){
@@ -244,18 +206,6 @@ implementation{
 		char prntVal[32];
 		sprintf( prntVal, "%s: %u", head, value );
 		printStr( prntVal );
-	}
-
-
-	/** Prints the four sums used to compute the linear regression classifier */
-	void printSums();
-	void printSums( ){
-
-		printValueWithHeader( "Count", count );
-		printValueWithHeader( "SumX", sumX );
-		printValueWithHeader( "SumY", sumY );
-		printValueWithHeader( "SumX2", sumX2 );
-		printValueWithHeader( "SumXY", sumXY );
 	}
 
 
@@ -288,6 +238,7 @@ implementation{
 
 		/* If the AMControl was started successfully, initialize anything else */
 		if (err == SUCCESS){
+
 			call Timer.startOneShot( 1 );
 		}else
 			call AMControl.start();
@@ -386,16 +337,22 @@ implementation{
 	/* Method called when the moisture reading has been completed */
 	event void XSensor.readDone(error_t result, uint16_t data) {
 
-		//Ixent added this for SenseBench
-	      char dbg_msg[30];
-    	      sprintf(dbg_msg, "ACQUIRE(id=%d,n=%d,m=%d,d=%d)",TOS_NODE_ID, 0, 0, data);
-    	      printStr(dbg_msg);
+		data = randomInt( 1024 );
+
 		if (result == SUCCESS){
 
 			/* Because we want to read data in couples (moisture, temperature), once the
 			* moisture reading has been retrieved and stored, we request a temperature reading */
 			tmpX = data;
 			call YSensor.read();
+
+			//Ixent added this for SenseBench
+			{
+				char dbg_msg[30];
+				sprintf(dbg_msg, "ACQUIRE(id=%d,n=%d,m=%d,d=%u)",TOS_NODE_ID, 0, 0, data);
+				printStr(dbg_msg);
+			}
+
 		}else{
 			/* Print an error message and try to read again */
 			printInt8(MOIST_SENSOR_READ_ERROR);
@@ -406,10 +363,9 @@ implementation{
 
 	/* Method invoked after a Read operation has finished */
 	event void YSensor.readDone(error_t result, uint16_t data) {
-		//Ixent added this for SenseBench
-	      char dbg_msg[30];
-    	      sprintf(dbg_msg, "ACQUIRE(id=%d,n=%d,m=%d,d=%d)",TOS_NODE_ID, 0, 0, data);
-    	      printStr(dbg_msg);
+
+		data = randomInt( 1024 );
+
 		/* If the read operation completed successfully, do what we need */
 		if (result == SUCCESS){
 
@@ -422,15 +378,20 @@ implementation{
 			* are returned to the parent.*/
 
 			/* Record the sensed value and time of occurence */
-//			atomic{
-				xvals[bfrCntr] = tmpX;
-				yvals[bfrCntr] = data;
-				bfrCntr++;
-				if ( bfrCntr == BFR_SZ ){
-					bfrFull = TRUE;
-					bfrCntr = 0;
-				}
-//			}
+			xvals[bfrCntr] = tmpX;
+			yvals[bfrCntr] = data;
+			bfrCntr++;
+			if ( bfrCntr == BFR_SZ ){
+				bfrFull = TRUE;
+				bfrCntr = 0;
+			}
+
+			//Ixent added this for SenseBench
+			{
+				char dbg_msg[30];
+				sprintf(dbg_msg, "ACQUIRE(id=%d,n=%d,m=%d,d=%u)",TOS_NODE_ID, 0, 0, data);
+				printStr(dbg_msg);
+			}
 
 			/* Set again to read the new tuple, taking into account the SAMPLING_FREQUENCY.
 			Log the current time, when the tuple has been successfully read. Find how much
@@ -444,10 +405,6 @@ implementation{
 			if ( tmpNow <= 0 )
 				tmpNow = 1;
 			call Timer.startOneShot( (uint32_t)tmpNow );
-
-			#if DEBUG
-			printStr("Tuple Done!");
-			#endif
 
 		}else{
 			printInt8(TEMPR_SENSOR_READ_ERROR);
@@ -470,19 +427,6 @@ implementation{
 	/* This method is used to request data from the next child node in line.
 	* Appropriate / Necessary checks are assumed to have been performed prior to calling this method. */
 	void task requestNextData(){
-
-		char prntVal[16];
-		sprintf( prntVal, "%u -> %u", TOS_NODE_ID, childNodes[curContact] );
-		//printStr( prntVal );
-
-		#if DEBUG
-		printInt8( lclPayload.id );
-		wasteCPU();
-		printStr("RQ NXT");
-		wasteCPU();
-		printInt8( childNodes[curContact] );
-		wasteCPU();
-		#endif
 
 		call Packet.clear( &rqPacket );
 		memcpy( call AMSend.getPayload( &rqPacket, sizeof(uint8_t) ), (uint8_t*)&lclPayload.id, sizeof(uint8_t) );
@@ -517,22 +461,6 @@ implementation{
 			initialize the data once again */
 			initializeData();
 
-			#if DEBUG
-			printInt8( lclPayload.id );
-			wasteCPU();
-			printStr("HAS FATHER");
-			wasteCPU();
-			printInt8( parentId );
-			wasteCPU();
-			#endif
-
-			printInt8( lclPayload.id );
-			wasteCPU();
-			printStr("HAS DAD ");
-			wasteCPU();
-			printInt8( parentId );
-			wasteCPU();
-
 			/* Send a request to the children of this node, provided it has any */
 			if ( curContact < childCount ){
 				post requestNextData();
@@ -551,15 +479,6 @@ implementation{
 			/* Such messages are always (and only) sent from child nodes. Get the child node id */
 			radio_count_msg_t* rcm = (radio_count_msg_t*)data;
 
-			#if DEBUG
-			printInt8( lclPayload.id );
-			wasteCPU();
-			printStr("PAYLOAD FROM ");
-			wasteCPU();
-			printInt8( rcm->id );
-			wasteCPU();
-			#endif
-
 			/* If the received message is from the child that was contacted last,
 			* we need to proceed with contacting the next child */
 			if ( rcm->id == childNodes[curContact] )
@@ -569,7 +488,7 @@ implementation{
 			* environment. In particular, it contains the 4 sums of that child node. We use
 			* those values to update the local 4 sums, regardless of being the root or not.
 			* We choose to do the updating synchronously, to use less memory.  */
-			//nxFourSumsUpdate( (uint32_t*)rcm->readings );
+			nxFourSumsUpdate( (uint32_t*)rcm->readings );
 
 			/* After we have updated the local 4 sums, we contact the next child, if any */
 			if ( curContact < childCount ){
@@ -646,30 +565,10 @@ implementation{
 	task void sendReadings(){
 
 		uint8_t tmpCnt;
-		char prntVal[16];
-		sprintf( prntVal, "%u -> %u", TOS_NODE_ID, childNodes[curContact] );
-
-		#if DEBUG
-		printInt8( lclPayload.id );
-		wasteCPU();
-		printStr("BEFORE UPDATING: ");
-		wasteCPU();
-		printSums();
-		wasteCPU();
-		#endif
 
 		/* If the buffer is full, then we only need the buffer counter */
 		tmpCnt = ( bfrFull ) ? BFR_SZ : bfrCntr;
 		updateFourSums( xvals, yvals, tmpCnt );
-
-		#if DEBUG
-		printStr("SND DAD #TUPLES: ");
-		wasteCPU();
-		printInt8( parentId );
-		wasteCPU();
-		printSums();
-		wasteCPU();
-		#endif
 
 		/* All I'm sending is the 4 sums and the count. Copy these in the readings and send the packet.
 		* The count (size) is apriori known. The order in which values are stored is:
@@ -704,22 +603,20 @@ implementation{
 
 		computeAB();
 
-		#if PRINT_AB
-		printAB();
-		#endif
+		//Ixent added this for SenseBench
+		{
+			char dbg_msg[30];
+			int16_t ia = (int)a, ib = (int)b;
+			uint16_t da = (uint16_t)((a - (float)ia) * 1000.0), db = (uint16_t)((b - (float)ib) * 1000.0);
+		    sprintf(dbg_msg, "DELIVER(id=%d,n=%d.%u,n=%d.%u)", TOS_NODE_ID, ia, da, ib, db );
+		   	printStr(dbg_msg);
+	   	}
 
 		/* Log when all of this happened */
 		tmp = call Timer.getNow();
 		tmpNow = SLIDE_SIZE - (tmp - lastCycleStart);
 		if ( tmpNow < 0 )
 			tmpNow = 1;
-
-		#if DEBUG
-		printStr("tmpNow");
-		wasteCPU();
-		printInt32(tmpNow);
-		wasteCPU();
-		#endif
 
 		/* Move to the next cycle, starting after the appropriate time has elapsed */
 		call Timer.startOneShot( (uint32_t)tmpNow );
@@ -729,10 +626,6 @@ implementation{
 	* regression classifier. The root needs to use its local values of temperature and moisture as well, in
 	* order to compute (a, b) */
 	void computeLRParametersRootRecieved(uint8_t childID){
-		char dbg_msg[30];
-		//Ixent added this for SenseBench
-    sprintf(dbg_msg, "DELIVER(id=%d,n=%d,n=%d)",childID, a,b);
-   	printStr(dbg_msg);
 		post computeLRParameters();
 	}
 
@@ -744,9 +637,29 @@ implementation{
 		a = ( ((float)sumXY / (float)sumX) - ((float)sumY / (float)count) ) / 
 			( ( (float)sumX2 / (float)sumX ) - ( (float)sumX / (float)count));
 //		a = ((float)( count * sumXY - sumX * sumY )) / ((float)(count * sumX2 - sumX * sumX));
-		b = (sumY - a * sumX) / (float)(count);
+		b = ((double)sumY - a * sumX) / (float)(count);
 	}
 
 	#endif
+
+
+	/* Selects randomly an integer in the range [0, n) */
+	uint16_t randomMaxInt(){
+
+		return randomInt( (uint16_t)0xFFFF );
+	}
+
+	/* Selects randomly an integer in the range [0, n) */
+	uint16_t randomInt( uint16_t n ){
+
+		/* Get a random uint16_t value and do modulo n */
+		uint16_t randVal;
+		uint16_t maxRand = 0xFFFF;
+
+		randVal = call Random.rand16() & maxRand;
+
+		return ( randVal % n );
+	}
+
 }
 

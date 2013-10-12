@@ -1,5 +1,5 @@
 import re, getopt, logging, sys, os, string, UtilLib, CSVLib, AvroraLib, networkLib, shutil
-import SNEEMediator, SBLib, equivRuns, Node
+import SNEEMediator, SBLib, equivRuns, Node, LRMediator
 
 optScenarioDir = os.getcwd() + os.sep + "scenarios"
 optElfDir = os.getcwd() + os.sep + "sources" + os.sep + "LR" + os.sep + "elfs"
@@ -118,12 +118,15 @@ def generateElfsForExperimentalSetup(exprAttr, exprAttrCols):
 	xValLabels = exprAttr["XvalLabels"].split(";")
 
 	for task in tasks:
-		if not task in ["LR"]:
+
+		#If the task is not supported, skip it
+		if (not LRMediator.taskSupported( task )):
 				continue;
+
 		for (xVal,xValLabel) in zip(xVals,xValLabels):
 			for instance in range(1,optNumInstances+1):
 				exprAttr["Instance"] = instance
-				print "\n**********Experiment="+exprAttr['Experiment']+ "task="+task+" x="+xVal + " xLabel="+xValLabel+" instance="+str(exprAttr["Instance"])	
+				print "\n**********Experiment="+exprAttr['Experiment']+ " task="+task+" x="+xVal + " xLabel="+xValLabel+" instance="+str(exprAttr["Instance"])	
 
 
 
@@ -226,9 +229,9 @@ of our #DEFINES, to know where to look for them */
 	#define min(a,b) (((a) < (b)) ? (a) : (b))
 #endif
 
-#define WINDOW_SIZE 10000		//The size of the window for the query
-#define SLIDE_SIZE 10000		//How much the window slides for the new set of tuples
 #define SAMPLING_FREQUENCY %s		// sampling frequency in milliseconds
+#define WINDOW_SIZE (SAMPLING_FREQUENCY * 10)		//The size of the window for the query
+#define SLIDE_SIZE (SAMPLING_FREQUENCY * 10)		//How much the window slides for the new set of tuples
 
 #define DIMS 2	// number of dimensions
 
@@ -341,8 +344,9 @@ def generateNodeHeaderFiles(tempSneeFolder, elfOutputFolder, experiemntNameFolde
 			outputFile.close()
 
 
-	#dealing with root node
-	ChildrenString = makeChildrenString(childrenOfNode)
+	#dealing with root node. Root node is node 0
+	childrenOfNode = nodes[0].getChildren()
+	childrenString = makeChildrenString(childrenOfNode)
 	outputFile = open(elfOutputFolder+os.sep+"LRRoot.h", "w")
 	outputFile.write('''/* This is the header file with default configuration material 
 * for all of the motes. All motes are synchronized at the moment.
@@ -419,15 +423,8 @@ def makeChildrenString(childrenArray):
 		output = ""
 		first = True
 		for childIndex in range(0,len(childrenArray)):
-			if(childIndex == len(childrenArray)):
-				output = output + str(childrenArray[childIndex])
-			else:
-				if(first):
-					output = output + str(childrenArray[childIndex]) + ", "
-					first = False
-				else:
-					output = output + " " + str(childrenArray[childIndex]) + ", "
-		return output	
+			output = output + str(childrenArray[childIndex]) + ", "
+		return output[:-2]
 
 
 def copyCorrectDataFilesFromStore(runOutputDir):

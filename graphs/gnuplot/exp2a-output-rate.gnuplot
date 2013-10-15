@@ -9,7 +9,7 @@ set style fill pattern border -1
 set boxwidth 0.9
 
 set xlabel "Network Layout"
-set ylabel "Tuple Delivery Rate (delivered/acquired)"
+set ylabel "Output rate (tuples/s)"
 set key center left
 
 set yrange [0:]

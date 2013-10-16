@@ -242,7 +242,7 @@ typedef uint16_t read_type_t;
 * The (default) maximum number of payload bytes is 28. This gives us up to 26 bytes
 * of readings to be transmitted. This can be interpreted as 13 readings (each reading is
 * a uint16_t value). We can have 5 readings without a problem */
-#define BFR_SZ (WINDOW_SIZE / SAMPLING_FREQUENCY)	// The buffer where read tuples are stored, before being sent
+#define BFR_SZ NUM_TUPLES // (WINDOW_SIZE / SAMPLING_FREQUENCY)	// The buffer where read tuples are stored, before being sent
 
 /* The number of maximum readings that we can have in a radio message.
  * The (default) maximum payload is 28 bytes. This gives us up to 26 bytes of payload,

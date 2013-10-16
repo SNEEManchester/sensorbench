@@ -61,7 +61,9 @@ def copyEquivRunResults(runAttr, runAttrCols, outputDir, label):
 def getAvroraEnergyValues(avroraLogFile, runAttr):
 
 	simulationDuration = runAttr["SimulationDuration"]
-	(sumEnergy, maxEnergy, averageEnergy, radioEnergy, cpu_cycleEnergy, sensorEnergy, otherEnergy, networkLifetime) = AvroraLib.computeEnergyValues(".", simulationDuration, avroraLogFile, ignoreLedEnergy = True, defaultSiteEnergyStock = 31320, siteLifetimeRankFile = None, sink = 0, ignoreList = [])
+	nonRoutingTreeNodes = AvroraLib.getNonRoutingTreeNodes(".", avroraLogFile)
+
+	(sumEnergy, maxEnergy, averageEnergy, radioEnergy, cpu_cycleEnergy, sensorEnergy, otherEnergy, networkLifetime) = AvroraLib.computeEnergyValues(".", simulationDuration, avroraLogFile, ignoreLedEnergy = True, defaultSiteEnergyStock = 31320, siteLifetimeRankFile = None, sink = 0, ignoreList = nonRoutingTreeNodes)
 	#All node energy in Joules for simulation duration
 	runAttr["Sum Energy"] = sumEnergy
         #All node energy in Joules scaled to 6 month period

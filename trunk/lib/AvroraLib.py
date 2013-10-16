@@ -449,7 +449,7 @@ def computeEnergyValues(dirName, simulationDuration, inputFile = "avrora-out.txt
 	cpu_cycleEnergy = 0
 	networkLifetime = -1
 
-	monitors = parseEnergyValues(dirName + '/' + inputFile)
+	monitors = parseEnergyValues(dirName + os.sep + inputFile)
 
 	numNodes = len(monitors.keys())
 	#siteLifetimes: The lifetimes of each individual site
@@ -507,4 +507,22 @@ def getSensorDataString(numNodes):
 	for i in range(numNodes):
 		sensorData += ["light:"+str(i)+":."]
 	return string.join(sensorData,',')
+
+
+def getNonRoutingTreeNodes(dirName, inputFile = "avrora-out.txt", emptyFile = "Blink"):
+	avroraFile = dirName + os.sep + inputFile
+
+	newSitePattern= re.compile ('Loading (.+)\.elf...OK')
+	currentNode = 0
+	nonRoutingTreeNodes = []
+	
+	for line in fileinput.input([inputFile]):
+		newSiteMatch = newSitePattern.match(line)
+		if (newSiteMatch):
+			elfFile = str(newSiteMatch.group(1))
+			if (elfFile == emptyFile):
+				nonRoutingTreeNodes.append(currentNode)
+			currentNode = currentNode + 1
+
+	return nonRoutingTreeNodes
 

@@ -7,7 +7,7 @@ set auto x
 set auto y
 set style data linespoints
 set pointsize 1.5
-set xlabel "Acquisition rate (s)"
+set xlabel "Acquisition interval (s)"
 set ylabel "Output Rate (tuples/s)"
 set key center right
 set style histogram cluster gap 1

@@ -9,7 +9,7 @@ set style fill pattern border -1
 set boxwidth 0.9
 
 set xlabel "Network Layout"
-set ylabel "Data Freshness (s)"
+set ylabel "Delivery Delay (s)"
 set key center left
 
 set yrange [0:]

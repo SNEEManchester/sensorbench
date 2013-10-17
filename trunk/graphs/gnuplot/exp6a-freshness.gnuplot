@@ -8,7 +8,7 @@ set auto y
 set style data linespoints
 set pointsize 1.5
 set xlabel "Radio Packet Loss Rate (%)"
-set ylabel "Data Freshness (s)"
+set ylabel "Delivery Delay (s)"
 set key center right
 set style histogram cluster gap 1
 set style fill pattern border -1

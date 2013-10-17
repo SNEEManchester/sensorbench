@@ -18,8 +18,8 @@ set xtics
 set datafile missing '?'
 set datafile separator ","
 
-plot CSV_DIR.'exp6a-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'raw'? column(LIFETIME_COL):1/0) title 'SNEE raw' linetype LT_INSNEE_RAW, \
-     CSV_DIR.'exp6a-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'aggr'? column(LIFETIME_COL):1/0) title 'SNEE aggr' linetype LT_INSNEE_AGGR, \
+plot CSV_DIR.'exp6a-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'raw'? column(LIFETIME_COL):1/0) title 'SNEE Select' linetype LT_INSNEE_RAW, \
+     CSV_DIR.'exp6a-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'aggr'? column(LIFETIME_COL):1/0) title 'SNEE Aggr' linetype LT_INSNEE_AGGR, \
      CSV_DIR.'exp6a-MHOSC-results-avg.csv' using XVAL_COL:LIFETIME_COL title 'MHOSC' linetype LT_MHOSC, \
      CSV_DIR.'exp6a-OD2-results-avg.csv' using XVAL_COL:LIFETIME_COL title 'OD2' linetype LT_OD2, \
      CSV_DIR.'exp6a-LR-results-avg.csv' using XVAL_COL:LIFETIME_COL title 'LR' linetype LT_LR

@@ -19,11 +19,12 @@ set datafile missing '?'
 set datafile separator ","
 
 plot CSV_DIR.'exp3a-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'raw'? column(OUTPUT_RATE_COL):1/0) title 'SNEE Select' linetype LT_INSNEE_RAW, \
-     CSV_DIR.'exp3a-MHOSC-results-avg.csv' using XVAL_COL:OUTPUT_RATE_COL title 'MHOSC' linetype LT_MHOSC
+     CSV_DIR.'exp3a-MHOSC-results-avg.csv' using XVAL_COL:OUTPUT_RATE_COL title 'MHOSC' linetype LT_MHOSC, \
+     CSV_DIR.'exp3a-OD2-results-avg.csv' using XVAL_COL:OUTPUT_RATE_COL title 'OD2' linetype LT_OD2, \
+     CSV_DIR.'exp3a-LR-results-avg.csv' using XVAL_COL:OUTPUT_RATE_COL title 'LR' linetype LT_LR
 
 #, \
 #     CSV_DIR.'exp3a-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'corr1'? column(OUTPUT_RATE_COL):1/0) title #'SNEE Join' linetype LT_INSNEE_CORR1, \
 #
-#     CSV_DIR.'exp3a-OD2-results-avg.csv' using XVAL_COL:OUTPUT_RATE_COL title 'OD2' linetype LT_OD2, \
-#     CSV_DIR.'exp3a-LR-results-avg.csv' using XVAL_COL:OUTPUT_RATE_COL title 'LR' linetype LT_LR
+
 

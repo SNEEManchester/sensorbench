@@ -240,7 +240,8 @@ def generateSettingFiles(elfOutputFolder, runAttr):
 #define MAX_VAL 1024
 
 /* The maximum number of allowed tuples, based on the window size and the sampling frequency */
-#define MAX_WINDOW_SIZE (WINDOW_SIZE / SAMPLING_FREQUENCY)
+//#define MAX_WINDOW_SIZE (WINDOW_SIZE / SAMPLING_FREQUENCY)
+#define MAX_WINDOW_SIZE 10
 
 /* The percentage of points from the buffer that are used as a sample of the actual readings. */
 #define SAMPLE_PRCNT 1.0

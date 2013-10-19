@@ -51,7 +51,7 @@ def parseRunResults(runAttr, runDirName):
 		print "simulationDuration=" + runAttr["SimulationDuration"]
 		#find output file and process
 		SBLib.getAvroraEnergyValues(avroraLogFile, runAttr)
-		if (runAttr['Platform']=="INSNEE"):
+		if ((runAttr['Platform']=="INSNEE") or (runAttr['Platform']=="OD2")): # or runAttr['Platform']=="LR"
 			parseAcquireDeliverTimes.parse(avroraLogFile, runAttr, True)
 		else:
 			parseAcquireDeliverTimes.parse(avroraLogFile, runAttr, False)

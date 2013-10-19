@@ -12,8 +12,7 @@ def doComputeStats(id,n,m,aqRate,bufferingFactor, acqTupleCount, delTupleCount, 
 		acqTupleCount += 1
 		tacq = acquireTimes[(id,n,m)]
 
-		#print "B"
-
+		#TODO: over here handle case to ignore id
 		if (id,n) in deliverTimes:
 			tdel = deliverTimes[(id,n)]
 			tdelta = tdel - tacq
@@ -23,7 +22,7 @@ def doComputeStats(id,n,m,aqRate,bufferingFactor, acqTupleCount, delTupleCount, 
 			#TODO: Think about threshold!!
 			if tdelta.seconds > (int(aqRate)*int(bufferingFactor)+1):
 				print "doh "+str(tdelta.seconds)
-				return (acqTupleCount, delTupleCount)
+				return (acqTupleCount, delTupleCount, tdelta_sum) #!not sure about tdelta_sum
 
 			#print "C"
 			delTupleCount += 1

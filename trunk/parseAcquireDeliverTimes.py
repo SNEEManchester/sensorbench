@@ -5,14 +5,13 @@ import re, fileinput, datetime
 def initVars():
 	return (-1, -1, -1, {}, {})
 
-def doComputeStats(id,n,m,aqRate,bufferingFactor, acqTupleCount, delTupleCount, tdelta_sum, acquireTimes, deliverTimes):
+def dodoComputeStats(id,n,m,aqRate,bufferingFactor, acqTupleCount, delTupleCount, tdelta_sum, acquireTimes, deliverTimes):
 	#print "A"
 
 	if (id,n,m) in acquireTimes:
 		acqTupleCount += 1
 		tacq = acquireTimes[(id,n,m)]
 
-		#TODO: over here handle case to ignore id
 		if (id,n) in deliverTimes:
 			tdel = deliverTimes[(id,n)]
 			tdelta = tdel - tacq
@@ -31,17 +30,25 @@ def doComputeStats(id,n,m,aqRate,bufferingFactor, acqTupleCount, delTupleCount, 
 
 	return (acqTupleCount, delTupleCount, tdelta_sum)
 
-def computeStats(aqRate,bufferingFactor, acquireTimes, deliverTimes, MAX_ID, MAX_N, MAX_M, deliverTupleAtATime):
+
+def doComputeStats(id,aqRate,bufferingFactor,acqTupleCount, delTupleCount, tdelta_sum,acquireTimes, deliverTimes, MAX_ID, MAX_N, MAX_M, deliverTupleAtATime):
+
+	for n in range(0,MAX_N+1):
+		if (deliverTupleAtATime):
+			(acqTupleCount, delTupleCount, tdelta_sum) = dodoComputeStats(id,n,None,aqRate,bufferingFactor,acqTupleCount, delTupleCount, tdelta_sum, acquireTimes, deliverTimes)
+		else:
+			for m in range(0,MAX_M+1):
+				(acqTupleCount, delTupleCount, tdelta_sum) = dodoComputeStats(id,n,m,aqRate,bufferingFactor,acqTupleCount, delTupleCount, tdelta_sum, acquireTimes, deliverTimes)
+
+
+def computeStats(aqRate,bufferingFactor, acquireTimes, deliverTimes, MAX_ID, MAX_N, MAX_M, deliverTupleAtATime, aggrFlag):
 	(acqTupleCount, delTupleCount, tdelta_sum) = (0, 0, 0.0)
 
-	for id in range(0,MAX_ID+1):
-		#print id
-		for n in range(0,MAX_N+1):
-			if (deliverTupleAtATime):
-				(acqTupleCount, delTupleCount, tdelta_sum) = doComputeStats(id,n,None,aqRate,bufferingFactor,acqTupleCount, delTupleCount, tdelta_sum, acquireTimes, deliverTimes)
-			else:
-				for m in range(0,MAX_M+1):
-					(acqTupleCount, delTupleCount, tdelta_sum) = doComputeStats(id,n,m,aqRate,bufferingFactor,acqTupleCount, delTupleCount, tdelta_sum, acquireTimes, deliverTimes)
+	if not aggrFlag:
+		for id in range(0,MAX_ID+1):
+			(acqTupleCount, delTupleCount, tdelta_sum) = doComputeStats(id, aqRate, bufferingFactor, acqTupleCount, delTupleCount, tdelta_sum, acquireTimes, deliverTimes, MAX_ID, MAX_N, MAX_M, deliverTupleAtATime)
+	else:
+		(acqTupleCount, delTupleCount, tdelta_sum) = doComputeStats(None, aqRate, bufferingFactor, acqTupleCount, delTupleCount, tdelta_sum, acquireTimes, deliverTimes, MAX_ID, MAX_N, MAX_M, deliverTupleAtATime)
 
 	return (acqTupleCount, delTupleCount, tdelta_sum)
 
@@ -55,7 +62,7 @@ def getRegEx(deliverTupleAtATime):
 		deliverRegEx = "\d+\s+(\d+):(\d+):(\d+).(\d+)\s+DELIVER\(id=(\d+),n=(\d+)"
 	return (acquireRegEx, deliverRegEx)
 
-def parseFile(avrorafile, acquireTimes, deliverTimes, MAX_ID, MAX_N, MAX_M, deliverTupleAtATime):
+def parseFile(avrorafile, acquireTimes, deliverTimes, MAX_ID, MAX_N, MAX_M, deliverTupleAtATime, aggrFlag):
 
 	(acquireRegEx, deliverRegEx) = getRegEx(deliverTupleAtATime)
 	
@@ -78,12 +85,16 @@ def parseFile(avrorafile, acquireTimes, deliverTimes, MAX_ID, MAX_N, MAX_M, deli
 				m = None
 			t = datetime.datetime(1970,1,1,hours,minutes,seconds,microseconds)
 
-			#first time only
-			if not (id,n,m) in acquireTimes:
-				acquireTimes[(id,n,m)]=t
-			else:
-				print "IGNORING DUPLICATE acquired tuple in %s: t=%s,id=%s,n=%s,m=%s" % (avrorafile, str(t), str(id), str(n), str(m))
-
+			if not aggrFlag:
+				#first time only
+				if not (id,n,m) in acquireTimes:
+					acquireTimes[(id,n,m)]=t
+				else:
+					print "IGNORING DUPLICATE acquired tuple in %s: t=%s,id=%s,n=%s,m=%s" % (avrorafile, str(t), str(id), str(n), str(m))
+			else: #If it's an aggregation, we don't track node ID
+				if not (None,n,m) in acquireTimes:
+					acquireTimes[(None,n,m)]=t					
+			
 			if (id > MAX_ID):
 				MAX_ID = id
 			if (n > MAX_N):
@@ -103,8 +114,12 @@ def parseFile(avrorafile, acquireTimes, deliverTimes, MAX_ID, MAX_N, MAX_M, deli
 			t = datetime.datetime(1970,1,1,hours,minutes,seconds,microseconds)
 
 			#first time only
-			if not (id,n) in deliverTimes:
-				deliverTimes[(id,n)]=t
+			if not aggrFlag:
+				if not (id,n) in deliverTimes:
+					deliverTimes[(id,n)]=t
+			else:
+				if not (id,n) in deliverTimes:
+					deliverTimes[(None,n)]=t
 
 
 #avroraOutputFile
@@ -133,9 +148,13 @@ def parse(avroraOutputFile, runAttr, deliverTupleAtATime):
 	aqRate = int(runAttr["AcquisitionRate"])
 	bufferingFactor = runAttr["BufferingFactor"]
 	simulationDuration = runAttr["SimulationDuration"]
-	
-	(MAX_ID, MAX_N, MAX_M) = parseFile(avroraOutputFile, acquireTimes, deliverTimes, MAX_ID, MAX_N, MAX_M, deliverTupleAtATime)
-	(acqTupleCount, delTupleCount, tdelta_sum) = computeStats(aqRate,bufferingFactor, acquireTimes, deliverTimes, MAX_ID, MAX_N, MAX_M, deliverTupleAtATime)
+
+	aggrFlag = True
+	if (runAttr["Task"]=="Aggr"):
+		aggrFlag = True
+
+	(MAX_ID, MAX_N, MAX_M) = parseFile(avroraOutputFile, acquireTimes, deliverTimes, MAX_ID, MAX_N, MAX_M, deliverTupleAtATime,aggrFlag)
+	(acqTupleCount, delTupleCount, tdelta_sum) = computeStats(aqRate,bufferingFactor, acquireTimes, deliverTimes, MAX_ID, MAX_N, MAX_M, deliverTupleAtATime,aggrFlag)
 
 	print "delTupleCount=" + str(delTupleCount)
 

@@ -26,13 +26,13 @@ def doComputeStats(id,n,m,aqRate,bufferingFactor, acqTupleCount, delTupleCount, 
 
 			#print "C"
 			delTupleCount += 1
-			tdelta_sum += tdelta.seconds
+			tdelta_sum += tdelta.total_seconds()
 			#print "%d,%d,%d,%s,%s,%s" % (id, n, m, str(tacq), str(tdel), str(tdelta))
 
 	return (acqTupleCount, delTupleCount, tdelta_sum)
 
 def computeStats(aqRate,bufferingFactor, acquireTimes, deliverTimes, MAX_ID, MAX_N, MAX_M, deliverTupleAtATime):
-	(acqTupleCount, delTupleCount, tdelta_sum) = (0, 0, 0)
+	(acqTupleCount, delTupleCount, tdelta_sum) = (0, 0, 0.0)
 
 	for id in range(0,MAX_ID+1):
 		#print id

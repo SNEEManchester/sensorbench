@@ -1,6 +1,6 @@
 load 'gnuplot/init.gnuplot'
 
-set terminal pdf enhanced color
+set terminal pdf enhanced color dashed
 set out PDF_DIR.'exp2a-delivery-rate.pdf'
 
 set style data histogram
@@ -16,9 +16,9 @@ set yrange [0:110]
 set datafile missing '?'
 set datafile separator ","
 
-plot CSV_DIR.'exp2a-INSNEE-raw-results-avg.csv' using DELIVERY_RATE_COL:xtic(XVAL_COL) title 'SNEE Select' linetype LT_INSNEE_RAW, \
-     CSV_DIR.'exp2a-INSNEE-aggr-results-avg.csv' using DELIVERY_RATE_COL:xtic(XVAL_COL) title 'SNEE Aggr' linetype LT_INSNEE_AGGR, \
-     CSV_DIR.'exp2a-MHOSC-results-avg.csv' using DELIVERY_RATE_COL:xtic(XVAL_COL) title 'MHOSC' linetype LT_MHOSC, \
-     CSV_DIR.'exp2a-OD2-results-avg.csv' using DELIVERY_RATE_COL:xtic(XVAL_COL) title 'OD2' linetype LT_OD2, \
-     CSV_DIR.'exp2a-LR-results-avg.csv' using DELIVERY_RATE_COL:xtic(XVAL_COL) title 'LR' linetype LT_LR
+plot CSV_DIR.'exp2a-INSNEE-raw-results-avg.csv' using DELIVERY_RATE_COL:xtic(XVAL_COL) title 'SNEE Select' linestyle LS_INSNEE_RAW, \
+     CSV_DIR.'exp2a-INSNEE-aggr-results-avg.csv' using DELIVERY_RATE_COL:xtic(XVAL_COL) title 'SNEE Aggr' linestyle LS_INSNEE_AGGR, \
+     CSV_DIR.'exp2a-MHOSC-results-avg.csv' using DELIVERY_RATE_COL:xtic(XVAL_COL) title 'MHOSC' linestyle LS_MHOSC, \
+     CSV_DIR.'exp2a-OD2-results-avg.csv' using DELIVERY_RATE_COL:xtic(XVAL_COL) title 'OD2' linestyle LS_OD2, \
+     CSV_DIR.'exp2a-LR-results-avg.csv' using DELIVERY_RATE_COL:xtic(XVAL_COL) title 'LR' linestyle LS_LR
 

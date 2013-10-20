@@ -10,7 +10,7 @@ LIFETIME_COL = 37
 CSV_DIR = "csv/"
 PDF_DIR = "pdf/"
 
-set style line 1 linetype 23 linecolor rgb "red" linewidth 3 pointtype 1
+set style line 1 linecolor rgb "red" linewidth 3 pointtype 1
 set style line 2 linecolor rgb "gray" linewidth 3 pointtype 6 
 set style line 3 linecolor rgb "green" linewidth 3 pointtype 8
 set style line 4 linecolor rgb "black" linewidth 3 pointtype 10

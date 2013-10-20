@@ -1,6 +1,6 @@
 load 'gnuplot/init.gnuplot'
 
-set terminal pdf enhanced color
+set terminal pdf enhanced color dashed
 set out PDF_DIR.'exp7-sum-6m-energy.pdf'
 
 set auto x
@@ -18,12 +18,12 @@ set xtics
 set datafile missing '?'
 set datafile separator ","
 
-plot CSV_DIR.'exp7-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'raw'? column(SUM_6M_ENERGY_COL):1/0) title 'SNEE Select' linetype LT_INSNEE_RAW, \
-     CSV_DIR.'exp7-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'aggr'? column(SUM_6M_ENERGY_COL):1/0) title 'SNEE Aggr' linetype LT_INSNEE_AGGR, \
-     CSV_DIR.'exp7-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'corr1'? column(SUM_6M_ENERGY_COL):1/0) title 'SNEE Join'linetype LT_INSNEE_CORR1, \
-     CSV_DIR.'exp7-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'corr2'? column(SUM_6M_ENERGY_COL):1/0) title 'SNEE Join2'linetype LT_INSNEE_CORR2, \
-     CSV_DIR.'exp7-MHOSC-results-avg.csv' using XVAL_COL:SUM_6M_ENERGY_COL title 'MHOSC' linetype LT_MHOSC, \
-     CSV_DIR.'exp7-OD2-results-avg.csv' using XVAL_COL:SUM_6M_ENERGY_COL title 'OD2' linetype LT_OD2, \
-     CSV_DIR.'exp7-LR-results-avg.csv' using XVAL_COL:SUM_6M_ENERGY_COL title 'LR' linetype LT_LR
+plot CSV_DIR.'exp7-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'raw'? column(SUM_6M_ENERGY_COL):1/0) title 'SNEE Select' linestyle LS_INSNEE_RAW, \
+     CSV_DIR.'exp7-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'aggr'? column(SUM_6M_ENERGY_COL):1/0) title 'SNEE Aggr' linestyle LS_INSNEE_AGGR, \
+     CSV_DIR.'exp7-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'corr1'? column(SUM_6M_ENERGY_COL):1/0) title 'SNEE Join'linestyle LS_INSNEE_CORR1, \
+     CSV_DIR.'exp7-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'corr2'? column(SUM_6M_ENERGY_COL):1/0) title 'SNEE Join2'linestyle LS_INSNEE_CORR2, \
+     CSV_DIR.'exp7-MHOSC-results-avg.csv' using XVAL_COL:SUM_6M_ENERGY_COL title 'MHOSC' linestyle LS_MHOSC, \
+     CSV_DIR.'exp7-OD2-results-avg.csv' using XVAL_COL:SUM_6M_ENERGY_COL title 'OD2' linestyle LS_OD2, \
+     CSV_DIR.'exp7-LR-results-avg.csv' using XVAL_COL:SUM_6M_ENERGY_COL title 'LR' linestyle LS_LR
 
 

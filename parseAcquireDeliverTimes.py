@@ -149,8 +149,8 @@ def parse(avroraOutputFile, runAttr, deliverTupleAtATime):
 	simulationDuration = runAttr["SimulationDuration"]
 
 	aggrFlag = False
-	if (runAttr["Task"]=="aggr"):
-		aggrFlag = True
+	if (runAttr['Task'] in ['aggr','LR']):
+		aggrFlag = True #In this case we don't track node ids in tuples, only the epoch
 
 	(MAX_ID, MAX_N, MAX_M) = parseFile(avroraOutputFile, acquireTimes, deliverTimes, MAX_ID, MAX_N, MAX_M, deliverTupleAtATime,aggrFlag)
 	(acqTupleCount, delTupleCount, tdelta_sum) = computeStats(aqRate,bufferingFactor, acquireTimes, deliverTimes, MAX_ID, MAX_N, MAX_M, deliverTupleAtATime,aggrFlag)

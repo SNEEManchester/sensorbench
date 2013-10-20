@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import re, fileinput, datetime
+import re, fileinput, datetime, sys
 
 
 def initVars():
@@ -39,7 +39,7 @@ def doComputeStats(id,aqRate,bufferingFactor,acqTupleCount, delTupleCount, tdelt
 		else:
 			for m in range(0,MAX_M+1):
 				(acqTupleCount, delTupleCount, tdelta_sum) = dodoComputeStats(id,n,m,aqRate,bufferingFactor,acqTupleCount, delTupleCount, tdelta_sum, acquireTimes, deliverTimes)
-
+	return (acqTupleCount, delTupleCount, tdelta_sum)
 
 def computeStats(aqRate,bufferingFactor, acquireTimes, deliverTimes, MAX_ID, MAX_N, MAX_M, deliverTupleAtATime, aggrFlag):
 	(acqTupleCount, delTupleCount, tdelta_sum) = (0, 0, 0.0)
@@ -56,16 +56,15 @@ def computeStats(aqRate,bufferingFactor, acquireTimes, deliverTimes, MAX_ID, MAX
 def getRegEx(deliverTupleAtATime):
 	if deliverTupleAtATime:
 		acquireRegEx = "\d+\s+(\d+):(\d+):(\d+).(\d+)\s+ACQUIRE\(id=(\d+),ep=(\d+)"
-		deliverRegEx = "\d+\s+(\d+):(\d+):(\d+).(\d+)\s+DELIVER\(id=(\d+),ep=(\d+)"
+		deliverRegEx = "\d+\s+(\d+):(\d+):(\d+).(\d+)\s+DELIVER\(id=(\-?\d+),ep=(\d+)"
 	else:
 		acquireRegEx = "\d+\s+(\d+):(\d+):(\d+).(\d+)\s+ACQUIRE\(id=(\d+),n=(\d+),m=(\d),"
-		deliverRegEx = "\d+\s+(\d+):(\d+):(\d+).(\d+)\s+DELIVER\(id=(\d+),n=(\d+)"
+		deliverRegEx = "\d+\s+(\d+):(\d+):(\d+).(\d+)\s+DELIVER\(id=(\-?\d+),n=(\d+)"
 	return (acquireRegEx, deliverRegEx)
 
 def parseFile(avrorafile, acquireTimes, deliverTimes, MAX_ID, MAX_N, MAX_M, deliverTupleAtATime, aggrFlag):
-
 	(acquireRegEx, deliverRegEx) = getRegEx(deliverTupleAtATime)
-	
+
 	inFile =  open(avrorafile)
 	while 1:
 		line = inFile.readline()
@@ -118,7 +117,7 @@ def parseFile(avrorafile, acquireTimes, deliverTimes, MAX_ID, MAX_N, MAX_M, deli
 				if not (id,n) in deliverTimes:
 					deliverTimes[(id,n)]=t
 			else:
-				if not (id,n) in deliverTimes:
+				if not (None,n) in deliverTimes:
 					deliverTimes[(None,n)]=t
 
 
@@ -149,8 +148,8 @@ def parse(avroraOutputFile, runAttr, deliverTupleAtATime):
 	bufferingFactor = runAttr["BufferingFactor"]
 	simulationDuration = runAttr["SimulationDuration"]
 
-	aggrFlag = True
-	if (runAttr["Task"]=="Aggr"):
+	aggrFlag = False
+	if (runAttr["Task"]=="aggr"):
 		aggrFlag = True
 
 	(MAX_ID, MAX_N, MAX_M) = parseFile(avroraOutputFile, acquireTimes, deliverTimes, MAX_ID, MAX_N, MAX_M, deliverTupleAtATime,aggrFlag)

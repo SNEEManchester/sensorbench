@@ -8,7 +8,7 @@ set auto y
 set style data linespoints
 set pointsize 1.5
 set xlabel "Proportion of Source Nodes in Network (%)"
-set ylabel "Tuples Delivered (%)"
+set ylabel "Delivery Fraction (%)"
 set key center right
 set style histogram cluster gap 1
 set style fill pattern border -1

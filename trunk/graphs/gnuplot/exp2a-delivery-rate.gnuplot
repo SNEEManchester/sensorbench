@@ -9,7 +9,7 @@ set style fill pattern border -1
 set boxwidth 0.9
 
 set xlabel "Network Layout"
-set ylabel "Tuples Delivered (%)"
+set ylabel "Delivery Fraction (%)"
 set key center left
 
 set yrange [0:110]

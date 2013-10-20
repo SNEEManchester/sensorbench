@@ -51,10 +51,13 @@ def parseRunResults(runAttr, runDirName):
 		print "simulationDuration=" + runAttr["SimulationDuration"]
 		#find output file and process
 		SBLib.getAvroraEnergyValues(avroraLogFile, runAttr)
-		if ((runAttr['Platform']=="INSNEE") or (runAttr['Platform']=="OD2")): # or runAttr['Platform']=="LR"
+		if (runAttr['Platform'] in ['INSNEE','OD2','LR']): #These deliver a tuple at a time
 			parseAcquireDeliverTimes.parse(avroraLogFile, runAttr, True)
-		else:
+		elif (runAttr['Platform'] in ['MHOSC']): #These (i.e., MHOSC) deliver tuples in batches
 			parseAcquireDeliverTimes.parse(avroraLogFile, runAttr, False)
+		else:
+			print "Platform unsupported: "+runAttr['Platform']
+			sys.exit(2)
 
 def fillInMissingVals(runAttr):
 	if (runAttr['Platform']=="MHOSC"):

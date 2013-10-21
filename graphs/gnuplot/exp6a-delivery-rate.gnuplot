@@ -21,7 +21,7 @@ set datafile separator ","
 plot CSV_DIR.'exp6a-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'raw'? column(DELIVERY_RATE_COL):1/0) title 'SNEE Select' linestyle LS_INSNEE_RAW, \
      CSV_DIR.'exp6a-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'aggr'? column(DELIVERY_RATE_COL):1/0) title 'SNEE Aggr' linestyle LS_INSNEE_AGGR, \
      CSV_DIR.'exp6a-MHOSC-results-avg.csv' using XVAL_COL:DELIVERY_RATE_COL title 'MHOSC' linestyle LS_MHOSC, \
-     CSV_DIR.'exp6a-OD2-results-avg.csv' using XVAL_COL:DELIVERY_RATE_COL title 'OD2' linestyle LS_OD2, \
+     CSV_DIR.'exp6a-OD2-results-avg.csv' using XVAL_COL:DELIVERY_RATE_COL title 'OD' linestyle LS_OD, \
      CSV_DIR.'exp6a-LR-results-avg.csv' using XVAL_COL:DELIVERY_RATE_COL title 'LR' linestyle LS_LR
 
 

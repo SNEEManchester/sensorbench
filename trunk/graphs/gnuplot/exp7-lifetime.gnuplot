@@ -9,7 +9,7 @@ set style data linespoints
 set pointsize 1.5
 set xlabel "Acquisition interval (s)"
 set ylabel "Lifetime (days)"
-set key center right
+set key at 135,60
 set style histogram cluster gap 1
 set style fill pattern border -1
 set boxwidth 0.9 absolute

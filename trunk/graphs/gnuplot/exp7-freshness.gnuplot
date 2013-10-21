@@ -23,6 +23,6 @@ plot CSV_DIR.'exp7-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL
      CSV_DIR.'exp7-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'corr1'? column(FRESHNESS_COL):1/0) title 'SNEE Join' linestyle LS_INSNEE_CORR1, \
      CSV_DIR.'exp7-INSNEE-results-avg.csv' using XVAL_COL:(stringcolumn(TASK_COL) eq 'corr2'? column(FRESHNESS_COL):1/0) title 'SNEE Join2' linestyle LS_INSNEE_CORR2, \
      CSV_DIR.'exp7-MHOSC-results-avg.csv' using XVAL_COL:FRESHNESS_COL title 'MHOSC' linestyle LS_MHOSC, \
-     CSV_DIR.'exp7-OD2-results-avg.csv' using XVAL_COL:FRESHNESS_COL title 'OD2' linestyle LS_OD2, \
+     CSV_DIR.'exp7-OD2-results-avg.csv' using XVAL_COL:FRESHNESS_COL title 'OD' linestyle LS_OD, \
      CSV_DIR.'exp7-LR-results-avg.csv' using XVAL_COL:FRESHNESS_COL title 'LR' linestyle LS_LR
 

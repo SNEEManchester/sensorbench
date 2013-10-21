@@ -9,11 +9,12 @@ set style data linespoints
 set pointsize 1.5
 set xlabel "Proportion of Source Nodes in Network (%)"
 set ylabel "Lifetime (days)"
-set key center right
+set key bottom left
 set style histogram cluster gap 1
 set style fill pattern border -1
 set boxwidth 0.9 absolute
 set yrange [0:]
+set xrange [20:105]
 set xtics
 set datafile missing '?'
 set datafile separator ","

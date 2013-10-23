@@ -22,11 +22,17 @@ In this step, for each combination of the variables specified in `experiments.cs
 
 ==Step 3: Run the simulations==
 
-The third step is to run the simulations.  In our case, we used the Avrora simulator.  As we generated a considerable number of topology instances, we used HTCondor, an open-source distributed high-throughput computing software framework developed at the University of Wisconsin-Madison that enables simulations to run in parallel on a computer cluster.  The `prepCondorJobs.py` script takes a collection of jobs from Step 2 and prepares them to be submitted to the HTCondor framework.  However, we note that the use of HTCondor is an optional step; the simulator jobs can also be run on a local PC in a sequential manner using the `runSim.py` script.
+The third step is to run the simulations.  In our case, we used the Avrora simulator.  You can run the simulator jobs on a local PC in a sequential manner using the `runAvrSim.py` script.
+
+As we generated a considerable number of topology instances, we used [http://research.cs.wisc.edu/htcondor/ HTCondor], an open-source distributed high-throughput computing software framework developed at the University of Wisconsin-Madison that enables simulations to run in parallel on a computer cluster.  The `prepCondorJobs.py` script takes a collection of jobs from Step 2 and prepares them to be submitted to the HTCondor framework.  See the [UsingCondor] page on instructions about using condor.
+
+We note that the use of HTCondor is an optional step, although it considerably improves performance when running the experiments.
+
 
 ==Step 4: Parse the simulator output==
 
 The next step is to parse and analyse the simulator output, to obtain the performance metrics for each run, using the `parseSimResults.py` script.
 
 ==Step 5: Visualize the results==
+
 We have prepared `gnuplot` scripts to enable users of the benchmark to view raw results (i.e., for each instance) and aggregated results (i.e., the average for all the instances of a particular run).

@@ -10,7 +10,7 @@ The first step for running the benchmark is the generation of the topologies ove
 
 The `genTopologies.py` script generates network topologies, which takes as parameters _<networkSize,nodeLayout,nodeDensity,numInstances>_.  These are read from the `experiments.csv` file.
 
-The first three parameters correspond to properties of the network, as defined in the SenseBench paper.  The _numInstances_ parameter determines how many network topologies to generate using the first three parameters.  As a default, in the paper, we set _numInstances=10_.  This means that there are ten runs for each experiment scenario.
+The first three parameters correspond to properties of the network.  The _numInstances_ parameter determines how many network topologies to generate using the first three parameters.  As a default, in the paper, we set _numInstances=10_.  This means that there are ten runs for each experiment scenario.
 
 The scripts are designed to be easily extended, enabling network topology files to be created in the format required by each system being evaluated, and also the simulator used.
 
